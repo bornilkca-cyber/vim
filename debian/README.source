@@ -1,0 +1,17 @@
+vim-copilot Debian source package
+================================
+
+The public source package intentionally excludes the proprietary GitHub
+Copilot language server.  A package built from it remains usable with a
+server supplied through Vim's 'copilotcommand' option.
+
+Do not download the server from debian/rules or any package build hook.  For
+an approved internal build that bundles the server, copy the licensed,
+architecture-matched executable to
+runtime/copilot/copilot-language-server before creating the native source
+package.  Keep its executable mode.  The resulting source package must be the
+input to every clean-chroot build; injecting a server after source-package
+creation invalidates reproducibility verification.
+
+The distributor is responsible for confirming that bundling and redistribution
+comply with GitHub's terms.  Public packages must continue to omit the binary.

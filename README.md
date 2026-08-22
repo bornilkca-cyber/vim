@@ -298,49 +298,57 @@ The transcript uses the `copilotchat` filetype, so headings and fenced code
 blocks are highlighted. It is an ordinary scratch buffer: search and yank in
 it as usual.
 
-### Working on code
+### The Debian package
 
-These take a range, by default the whole buffer. Use them from Visual mode to
+The package is built from a Debian source package.  On Debian or Ubuntu,
+install the build tools and declared dependencies first:
 ask about a selection.
 
 | Command | Description |
-| --- | --- |
+sudo apt install build-essential debhelper devscripts diffoscope dpkg-dev \
+  libacl1-dev libgpm-dev libncurses-dev libtool-bin pkg-config sbuild
 | `:[range]copilot explain` | Explain what the code does. |
 | `:[range]copilot fix` | Point out problems and suggest fixes. |
 | `:[range]copilot tests` | Write tests for the code. |
-| `:[range]copilot doc` | Write documentation for the code. |
-| `:[range]copilot simplify` | Suggest a simpler version. |
+After installation, configure `'copilotcommand'` to point to an executable you
+obtained separately.  An approved internal build may bundle a licensed,
+architecture-matched executable at `runtime/copilot/copilot-language-server`
+before creating the source package; see [debian/README.source](debian/README.source).
 | `:copilot apply` | Replace the range the last command above ran on with the fenced code block under the cursor. |
 
-```vim
+make deb-src       # creates .dsc and source tarball artifacts
+make deb           # creates .deb, .buildinfo and .changes artifacts
 :'<,'>copilot fix
 " then, in the chat window, with the cursor in the code block:
-:copilot apply
-```
-
+The artifacts are written to the parent directory of the source checkout.
+`debian/changelog` is the authoritative package version, maintainer and build
+timestamp.  `debian/rules` exports that timestamp as `SOURCE_DATE_EPOCH` for
+configure, compilation, installation and package assembly.
 `:copilot apply` changes the buffer and can be undone with `u`.
+For a release build, configure an `sbuild` chroot for the target suite, then
+build the same source package twice in fresh chroots:
 
-### Inline completions
 
+make deb-sbuild DEB_SUITE=unstable DEB_ARCH=amd64
 | Command | Description |
 | --- | --- |
-| `:copilot suggest` | Ask for a completion at the cursor, shown as grey virtual text. Only the not-yet-typed part is shown. |
-| `:copilot accept` | Insert the suggestion being shown. Undoable with `u`. |
-| `:copilot dismiss` | Remove the suggestion without inserting it. |
-
+The verification compares the resulting `.deb` files byte-for-byte and runs
+`diffoscope` when they differ.  `make deb` is useful for local iteration but
+is not a clean-chroot reproducibility check.
 With `'copilot'` on, suggestions are requested automatically once Vim has been
 idle for a moment in Insert mode, and dropped again when you leave Insert mode
 or move on. Only one request is in flight at a time. Indentation follows
 `'expandtab'` and `'shiftwidth'`.
-
-### Agent mode
+dpkg-deb --info ../vim-copilot_*.deb
+dpkg-deb --contents ../vim-copilot_*.deb \
 
 | Command | Description |
 | --- | --- |
-| `:copilot agent {message}` | Like `:copilot chat`, but Copilot may ask Vim to run tools on your machine. |
-
+Use `lintian ../vim-copilot_*.changes` to inspect the package metadata.  The
+package build uses `dh_shlibdeps` to calculate shared-library dependencies.
 See [Security](#security) below. `:copilot chat` switches back out of agent
-mode.
+`make deb-clean` removes the Debian build tree and helper files.  Remove the
+artifacts in the parent directory separately when they are no longer needed.
 
 ### Server and session
 
@@ -500,8 +508,6 @@ Not implemented yet, roughly in order of how much they are missed:
   arm64 and Windows need their own, supplied via `'copilotcommand'`.
 - **Enterprise and proxy configuration.** No way to point at a GitHub
   Enterprise endpoint or an HTTP proxy from Vim.
-- **Cancelling a turn.** A long generation runs to completion; there is no
-  `$/cancelRequest`.
 - **Completion popup integration.** Suggestions are virtual text only and do
   not participate in `ins-completion`.
 - **Multi-file agent edits.** Tools can read files and run commands, but the
@@ -511,8 +517,6 @@ Not implemented yet, roughly in order of how much they are missed:
 - **Default mappings.** Accepting a suggestion needs a mapping you write
   yourself; there is no `<Tab>` handling out of the box.
 - **Telemetry controls.** No surface for the server's telemetry settings.
-- **Reproducible packaging.** The `.deb` is not built in a clean chroot and
-  carries no `.buildinfo`.
 
 ---
 

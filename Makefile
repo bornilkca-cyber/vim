@@ -53,31 +53,25 @@ all install uninstall tools config configure reconfig proto depend lint types te
 		(cd runtime/syntax && $(MAKE) clean); \
 	fi
 
-# Build a vim-copilot Debian package.  "deb-configure" only has to be run once,
-# or after changing configure options; "deb" does the build, staging and
-# packing.  See debian-copilot/build-deb.sh.
-DEB_CFLAGS = -O2 -fno-strength-reduce -Wall -Wno-deprecated-declarations \
-		-D_REENTRANT -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+# Build a vim-copilot Debian source package and its binary artifacts.  The
+# Debian rules file configures a fresh tree and fixes timestamps from the top
+# debian/changelog entry.  "deb-sbuild" verifies two clean-chroot builds.
+DEB_SUITE ?= unstable
+DEB_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 
-deb-configure:
-	cd src && rm -f auto/config.cache auto/pathdef.c && ./configure \
-		--prefix=/usr \
-		--with-features=huge \
-		--enable-copilot \
-		--with-vim-name=vim-copilot \
-		--with-ex-name=ex-copilot \
-		--with-view-name=view-copilot \
-		--with-modified-by=vim-copilot \
-		CFLAGS="$(DEB_CFLAGS)"
+deb-src:
+	dpkg-source -b .
 
 deb:
-	$(SHELL) debian-copilot/build-deb.sh
+	dpkg-buildpackage -us -uc -b
+
+deb-sbuild:
+	debian/scripts/check-reproducible "$(DEB_SUITE)" "$(DEB_ARCH)"
 
 deb-clean:
-	-rm -rf src/deb-root
-	-rm -f vim-copilot_*.deb
+	dh_clean
 
-.PHONY: deb deb-configure deb-clean
+.PHONY: deb-src deb deb-sbuild deb-clean
 
 # Executable used for running the indent tests.
 VIM_FOR_INDENTTEST = ../../src/vim
