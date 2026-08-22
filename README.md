@@ -266,6 +266,13 @@ set copilotcommand=/opt/copilot/copilot-language-server
 
 This option cannot be set from a modeline or in the sandbox.
 
+### Network configuration
+
+Vim passes its environment to the language server. Set standard proxy variables
+such as `HTTP_PROXY` and `HTTPS_PROXY` before starting Vim when the server
+supports them. Vim has no Enterprise endpoint option; use the language server's
+documented Enterprise configuration when available.
+
 ### A sample vimrc
 
 ```vim

@@ -69,6 +69,16 @@ func Test_copilot_status()
   call s:Cleanup()
 endfunc
 
+func Test_copilot_proxy_environment()
+  let save_proxy = $HTTP_PROXY
+  let $HTTP_PROXY = 'http://proxy.invalid:3128'
+  call s:UseMock()
+  copilot start
+  call assert_match('proxy', execute('copilot version'))
+  call s:Cleanup()
+  let $HTTP_PROXY = save_proxy
+endfunc
+
 func Test_copilot_signin_already()
   call s:UseMock()
   call assert_match('already signed in as testuser', execute('copilot signin'))
