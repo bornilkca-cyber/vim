@@ -874,6 +874,7 @@ extern int *dyn_libintl_nl_msg_cat_cntr;
 #define EXPAND_PATTERN_IN_BUF	64
 #define EXPAND_RETAB		65
 #define EXPAND_USER_COMPLETEOPT	66
+#define EXPAND_COPILOT		67
 
 
 // Values for exmode_active (0 is no exmode)

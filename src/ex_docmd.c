@@ -19,6 +19,10 @@ static int	ex_pressedreturn = FALSE;
 # define ex_hardcopy	ex_ni
 #endif
 
+#ifndef FEAT_COPILOT
+# define ex_copilot	ex_ni
+#endif
+
 #ifdef FEAT_EVAL
 static char_u	*do_one_cmd(char_u **, int, cstack_T *, char_u *(*fgetline)(int, void *, int, getline_opt_T), void *cookie);
 #else

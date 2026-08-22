@@ -217,6 +217,9 @@ void mbyte_im_set_active(int active_arg);
 #  include "popupwin.pro"
 #  include "textprop.pro"
 # endif
+# ifdef FEAT_COPILOT
+#  include "copilot.pro"
+# endif
 # ifdef FEAT_IMAGE_SIXEL
 #  include "sixel.pro"
 # endif

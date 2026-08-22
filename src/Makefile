@@ -1516,6 +1516,7 @@ BASIC_SRC = \
 	clipboard.c \
 	cmdexpand.c \
 	cmdhist.c \
+	copilot.c \
 	crypt.c \
 	crypt_zip.c \
 	debugger.c \
@@ -1704,6 +1705,7 @@ OBJ_COMMON = \
 	objects/clipboard.o \
 	objects/cmdexpand.o \
 	objects/cmdhist.o \
+	objects/copilot.o \
 	objects/crypt.o \
 	objects/crypt_zip.o \
 	objects/debugger.o \
@@ -1896,6 +1898,7 @@ PROTO_FILES = \
 	proto/clipboard.pro \
 	proto/cmdexpand.pro \
 	proto/cmdhist.pro \
+	proto/copilot.pro \
 	proto/crypt.pro \
 	proto/crypt_zip.pro \
 	proto/debugger.pro \
@@ -3305,6 +3308,9 @@ objects/cmdexpand.o: cmdexpand.c
 objects/cmdhist.o: cmdhist.c
 	$(CCC) -o $@ cmdhist.c
 
+objects/copilot.o: copilot.c
+	$(CCC) -o $@ copilot.c
+
 objects/crypt.o: crypt.c
 	$(CCC) -o $@ crypt.c
 
@@ -3963,6 +3969,11 @@ objects/cmdexpand.o: auto/osdef.h cmdexpand.c vim.h protodef.h auto/config.h fea
  libvterm/include/vterm.h libvterm/include/vterm_keycodes.h alloc.h \
  ex_cmds.h spell.h proto.h globals.h errors.h
 objects/cmdhist.o: auto/osdef.h cmdhist.c vim.h protodef.h auto/config.h feature.h os_unix.h \
+ ascii.h keymap.h termdefs.h macros.h option.h beval.h \
+ structs.h regexp.h gui.h libvterm/include/vterm.h \
+ libvterm/include/vterm_keycodes.h alloc.h ex_cmds.h spell.h proto.h \
+ globals.h errors.h
+objects/copilot.o: auto/osdef.h copilot.c vim.h protodef.h auto/config.h feature.h os_unix.h \
  ascii.h keymap.h termdefs.h macros.h option.h beval.h \
  structs.h regexp.h gui.h libvterm/include/vterm.h \
  libvterm/include/vterm_keycodes.h alloc.h ex_cmds.h spell.h proto.h \
@@ -4821,6 +4832,7 @@ proto/clientserver.pro: clientserver.c
 proto/clipboard.pro: clipboard.c
 proto/cmdexpand.pro: cmdexpand.c
 proto/cmdhist.pro: cmdhist.c
+proto/copilot.pro: copilot.c
 proto/crypt.pro: crypt.c
 proto/crypt_zip.pro: crypt_zip.c
 proto/debugger.pro: debugger.c

@@ -913,6 +913,9 @@ doESCkey:
 
 	    if (ins_esc(&count, cmdchar, nomove))
 	    {
+#ifdef FEAT_COPILOT
+		copilot_ins_leave();
+#endif
 		// When CTRL-C was typed got_int will be set, with the result
 		// that the autocommands won't be executed. When mapped got_int
 		// is not set, but let's keep the behavior the same.
@@ -1664,6 +1667,13 @@ ins_redraw(int ready)	    // not busy with something
 	    u_save(curwin->w_cursor.lnum,
 					(linenr_T)(curwin->w_cursor.lnum + 1));
     }
+
+#ifdef FEAT_COPILOT
+    // Vim is idle here, char_avail() above already returned for pending input,
+    // so this is the natural point to ask for a suggestion.
+    if (ready && !pum_visible())
+	copilot_ins_idle();
+#endif
 
     // Trigger TextChangedP if b_changedtick_pum differs. When the popupmenu
     // closes TextChangedI will need to trigger for backwards compatibility,

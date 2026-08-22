@@ -36,6 +36,7 @@ void channel_clear(channel_T *channel);
 void channel_free_all(void);
 void channel_check(channel_T *channel, ch_part_T part);
 int channel_in_blocking_wait(void);
+int channel_wait_and_read(channel_T *channel, ch_part_T part, int timeout);
 channel_T *get_channel_arg(typval_T *tv, int check_open, int reading, ch_part_T part);
 void channel_handle_events(int only_keep_open);
 int channel_any_keep_open(void);
