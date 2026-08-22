@@ -29,6 +29,11 @@ Your code is sent to the GitHub Copilot service.  Do not use this on material
 you are not allowed to share.  Authentication tokens are stored by the
 language server, not by Vim.
 
+Vim has no telemetry option and does not send a telemetry preference to the
+language server.  Telemetry policy and any settings are controlled by the
+language server and the service.  Use |:copilot| version to identify the server
+version when consulting its documentation.
+
 ==============================================================================
 2. Setting up						*copilot-setup*
 

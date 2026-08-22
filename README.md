@@ -363,6 +363,11 @@ mode.
 material you are not allowed to share. Buffers are synced to the server as you
 edit them, and `vim_read_file` sends a file's contents.
 
+Vim has no telemetry setting and does not send a telemetry preference to the
+language server. Telemetry policy and any settings are controlled by the
+language server and the service. Use `:copilot version` to identify the server
+version when consulting its documentation.
+
 Agent tools run on your machine, with your privileges. Before any tool runs,
 Vim shows exactly what was asked for and waits:
 
