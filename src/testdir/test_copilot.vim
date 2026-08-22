@@ -190,6 +190,26 @@ func Test_copilot_apply_errors()
   bwipe!
 endfunc
 
+func Test_copilot_gui()
+  if !has('gui_running')
+    return
+  endif
+  call s:UseMock()
+  copilot chat gui test
+  call assert_equal('Hello world', getbufline(s:ChatBufnr(), 5)[0])
+  new
+  call setline(1, "a\u00e9\u65e5\U0001F600")
+  write! Xgui.txt
+  call cursor(1, col('$'))
+  copilot suggest
+  call assert_notequal(0, len(prop_list(1, #{bufnr: bufnr('%')})))
+  copilot accept
+  call assert_equal(['MOCK ONE', 'MOCK TWO'], getline(1, '$'))
+  call s:Cleanup()
+  bwipe!
+  call delete('Xgui.txt')
+endfunc
+
 func Test_copilot_option_copilot()
   set copilot&
   call assert_equal(0, &copilot)

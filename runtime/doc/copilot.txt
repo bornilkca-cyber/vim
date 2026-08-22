@@ -80,6 +80,10 @@ The transcript uses the "copilotchat" filetype: headings and fenced code
 blocks are highlighted.  It is an ordinary scratch buffer, so you can search
 and yank in it as usual.
 
+The GTK3 GUI has focused Copilot coverage for chat and multibyte inline
+suggestion acceptance.  Other GUI backends should use the existing command and
+option interfaces.
+
 ==============================================================================
 4. Working on code					*copilot-code*
 
