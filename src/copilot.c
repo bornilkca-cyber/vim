@@ -27,6 +27,9 @@
 // How long ":copilot" waits for a synchronous reply.
 #define COPILOT_TIMEOUT	10000
 
+// How long to wait after asking the server to cancel a chat turn.
+#define COPILOT_CANCEL_TIMEOUT	5000
+
 /*
  * Callback invoked when a reply to a request arrives.  At most one of "result"
  * and "error" is non-NULL.
@@ -1066,6 +1069,7 @@ static linenr_T	cop_chat_lnum = 0;	// line being streamed into
 static garray_T	cop_chat_part = {0, 0, 1, 80, NULL};   // incomplete line
 static int	cop_turn_busy = FALSE;
 static int	cop_turn_id = 0;	// request id of the running turn
+static int	cop_turn_cancelled = FALSE;
 static int	cop_token_seq = 0;
 static char_u	*cop_chat_mode = NULL;	// "Agent" or NULL for the default
 
@@ -1196,6 +1200,10 @@ copilot_progress(dict_T *params)
 	copilot_set_str(&cop_conv_id,
 			     dict_get_string(value, "conversationId", FALSE));
 
+    // The server may still send progress after $/cancelRequest.
+    if (cop_turn_cancelled)
+	return;
+
     if (kind != NULL && STRCMP(kind, "end") == 0)
     {
 	cop_turn_busy = FALSE;
@@ -1276,6 +1284,29 @@ copilot_turn_cb(dict_T *result, dict_T *error, void *ctx UNUSED)
     if (cop_conv_id == NULL)
 	copilot_set_str(&cop_conv_id, dict_get_string(result,
 						   "conversationId", FALSE));
+    cop_turn_busy = FALSE;
+}
+
+/*
+ * Ask the server to cancel the running chat request.  The request stays in
+ * cop_pending until its response or error arrives.
+ */
+    static int
+copilot_turn_cancel(void)
+{
+    dict_T	*params;
+
+    if (cop_turn_cancelled || cop_turn_id == 0
+						|| !copilot_is_pending(cop_turn_id))
+	return FALSE;
+    params = dict_alloc();
+    if (params == NULL)
+	return FALSE;
+    dict_add_number(params, "id", cop_turn_id);
+    if (copilot_notify("$/cancelRequest", params) == FAIL)
+	return FALSE;
+    cop_turn_cancelled = TRUE;
+    return TRUE;
 }
 
 /*
@@ -1285,6 +1316,8 @@ copilot_turn_cb(dict_T *result, dict_T *error, void *ctx UNUSED)
 copilot_turn_wait(long timeout)
 {
     elapsed_T	start_tv;
+    elapsed_T	cancel_tv;
+    int		cancelling = FALSE;
 
     ELAPSED_INIT(start_tv);
     while (cop_turn_busy || copilot_is_pending(cop_turn_id))
@@ -1308,9 +1341,20 @@ copilot_turn_wait(long timeout)
 	if (got_int)
 	{
 	    got_int = FALSE;
-	    msg(_("Copilot: chat interrupted"));
-	    break;
+        if (copilot_turn_cancel())
+        {
+        ELAPSED_INIT(cancel_tv);
+        cancelling = TRUE;
+        msg(_("Copilot: chat interrupted"));
+        }
+        else
+        break;
 	}
+    if (cancelling && ELAPSED_FUNC(cancel_tv) > COPILOT_CANCEL_TIMEOUT)
+    {
+        emsg(_("E1610: Copilot: cancellation did not finish"));
+        break;
+    }
 	if (ELAPSED_FUNC(start_tv) > timeout)
 	{
 	    emsg(_("E1601: Copilot language server did not respond"));
@@ -1339,6 +1383,14 @@ copilot_chat_send(char_u *message, dict_T *doc, list_T *refs)
 	return;
     }
 
+    if (copilot_is_pending(cop_turn_id))
+    {
+    emsg(_("E1610: Copilot: previous chat turn did not finish"));
+	dict_unref(doc);
+	list_unref(refs);
+	return;
+    }
+
     buf = copilot_chat_open();
     if (buf == NULL || *message == NUL)
     {
@@ -1358,6 +1410,7 @@ copilot_chat_send(char_u *message, dict_T *doc, list_T *refs)
     copilot_chat_append(buf, (char_u *)"## Copilot");
     copilot_chat_append(buf, (char_u *)"");
     cop_chat_part.ga_len = 0;
+    cop_turn_cancelled = FALSE;
 
     vim_snprintf((char *)token, sizeof(token), "vim-turn-%d", ++cop_token_seq);
     copilot_set_str(&cop_turn_token, token);
@@ -1671,11 +1724,17 @@ copilot_chat_forget(void)
     VIM_CLEAR(cop_turn_token);
     cop_chat_part.ga_len = 0;
     cop_turn_busy = FALSE;
+    cop_turn_cancelled = FALSE;
 }
 
-    static void
+    static int
 copilot_chat_reset(void)
 {
+    if (copilot_is_pending(cop_turn_id))
+    {
+	emsg(_("E1610: Copilot: previous chat turn did not finish"));
+	return FAIL;
+    }
     if (cop_conv_id != NULL && cop_channel != NULL
 					     && channel_is_open(cop_channel))
     {
@@ -1688,6 +1747,7 @@ copilot_chat_reset(void)
 	}
     }
     copilot_chat_forget();
+    return OK;
 }
 
 /*
@@ -2504,7 +2564,8 @@ ex_copilot(exarg_T *eap)
     {
 	if (cop_chat_mode != NULL)
 	{
-	    copilot_chat_reset();
+        if (copilot_chat_reset() == FAIL)
+        return;
 	    VIM_CLEAR(cop_chat_mode);
 	}
 	copilot_chat_send(skipwhite(arg + 4), NULL, NULL);
@@ -2516,7 +2577,8 @@ ex_copilot(exarg_T *eap)
     {
 	if (cop_chat_mode == NULL)
 	{
-	    copilot_chat_reset();
+        if (copilot_chat_reset() == FAIL)
+        return;
 	    cop_chat_mode = vim_strsave((char_u *)"Agent");
 	}
 	copilot_chat_send(skipwhite(arg + 5), NULL, NULL);
@@ -2557,8 +2619,10 @@ ex_copilot(exarg_T *eap)
 
     if (STRCMP(arg, "reset") == 0)
     {
-	copilot_chat_reset();
-	msg(_("Copilot: conversation reset"));
+    if (copilot_chat_reset() == OK)
+    {
+        msg(_("Copilot: conversation reset"));
+    }
 	return;
     }
 

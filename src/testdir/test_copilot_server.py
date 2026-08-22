@@ -4,7 +4,9 @@
 # that the ":copilot" commands use.  No network, no account.
 
 import json
+import select
 import sys
+import time
 
 DEVICE_CODE = "TEST-CODE"
 
@@ -68,6 +70,44 @@ def run_turn(msg_id, params, conv_id):
                    "modelName": "MockModel", "billingMultiplier": 1})
 
 
+def run_cancellable_turn(msg_id, params, conv_id):
+    """Wait for Vim to cancel this request, then send late progress."""
+    token = params.get("workDoneToken")
+    turn_id = "turn-1"
+    progress(token, {"kind": "begin", "conversationId": conv_id,
+                     "turnId": turn_id})
+    progress(token, {"kind": "report", "conversationId": conv_id,
+                     "turnId": turn_id, "reply": "Before cancel"})
+
+    deadline = time.monotonic() + 0.2
+    cancel = None
+    while time.monotonic() < deadline:
+        ready, _, _ = select.select([sys.stdin], [], [], 0.01)
+        if ready:
+            cancel = read_message()
+            break
+        # Give Vim's event loop a chance to process the scheduled CTRL-C.
+        progress(token, {"kind": "report", "conversationId": conv_id,
+                         "turnId": turn_id,
+                         "steps": [{"id": "generate-response",
+                                    "title": "Generating response",
+                                    "status": "running"}]})
+    if cancel is None:
+        error(msg_id, -32000, "Timed out waiting for cancellation")
+        return
+    if (cancel.get("method") != "$/cancelRequest"
+            or cancel.get("params", {}).get("id") != msg_id):
+        error(msg_id, -32000, "Expected matching cancellation request")
+        return
+
+    progress(token, {"kind": "report", "conversationId": conv_id,
+                     "turnId": turn_id, "reply": "After cancel"})
+    progress(token, {"kind": "end", "conversationId": conv_id,
+                     "turnId": turn_id})
+    reply(msg_id, {"conversationId": conv_id, "turnId": turn_id,
+                   "modelName": "MockModel", "billingMultiplier": 1})
+
+
 def main():
     signed_in = True
     conv_seq = 0
@@ -109,7 +149,10 @@ def main():
             reply(msg_id, [])
         elif method == "conversation/create":
             conv_seq += 1
-            run_turn(msg_id, params, "conv-%d" % conv_seq)
+            if params.get("turns", [{}])[0].get("request") == "cancel":
+                run_cancellable_turn(msg_id, params, "conv-%d" % conv_seq)
+            else:
+                run_turn(msg_id, params, "conv-%d" % conv_seq)
         elif method == "conversation/turn":
             run_turn(msg_id, params, params.get("conversationId", "conv-1"))
         elif method == "textDocument/inlineCompletion":

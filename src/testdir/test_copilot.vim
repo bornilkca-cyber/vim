@@ -112,6 +112,22 @@ func Test_copilot_chat_second_turn()
   call s:Cleanup()
 endfunc
 
+func Test_copilot_chat_cancel()
+  call s:UseMock()
+  messages clear
+  call feedkeys("\<C-C>", 't')
+  copilot chat cancel
+  let lines = getbufline(s:ChatBufnr(), 1, '$')
+  call assert_equal('Before cancel', lines[4])
+  call assert_equal(-1, index(lines, 'After cancel'))
+  call assert_match('Copilot: chat interrupted', execute('messages'))
+  call assert_notmatch('Copilot chat failed', execute('messages'))
+  copilot chat after cancellation
+  let lines = getbufline(s:ChatBufnr(), 1, '$')
+  call assert_notequal(-1, index(lines, 'Hello world'))
+  call s:Cleanup()
+endfunc
+
 func Test_copilot_doc_sync_and_utf16()
   call s:UseMock()
   new
@@ -196,6 +212,29 @@ func Test_copilot_option_copilot()
   set copilot
   call assert_equal(1, &copilot)
   set copilot&
+endfunc
+
+func Test_copilot_default_mappings()
+  let g:copilot_default_mappings = 1
+  execute 'source' fnameescape('../../runtime/plugin/copilot.vim')
+  call assert_match('copilot#AcceptTab()', maparg('<Tab>', 'i'))
+  call assert_match('copilot dismiss', maparg('<C-]>', 'i'))
+  call assert_equal("\<Tab>", copilot#AcceptTab())
+  iunmap <Tab>
+  iunmap <C-]>
+  unlet g:copilot_default_mappings
+  unlet g:loaded_copilot_default_mappings
+endfunc
+
+func Test_copilot_default_mappings_preserve_user_mapping()
+  inoremap <Tab> USER-TAB
+  let g:copilot_default_mappings = 1
+  execute 'source' fnameescape('../../runtime/plugin/copilot.vim')
+  call assert_equal('USER-TAB', maparg('<Tab>', 'i'))
+  iunmap <Tab>
+  iunmap <C-]>
+  unlet g:copilot_default_mappings
+  unlet g:loaded_copilot_default_mappings
 endfunc
 
 " 'copilot' makes suggestions appear while typing, which only happens when Vim

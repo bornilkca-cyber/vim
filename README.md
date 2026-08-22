@@ -502,23 +502,8 @@ everything passed.
 
 ## TODO
 
-Not implemented yet, roughly in order of how much they are missed:
-
-- **GUI support.** The build is terminal-only. Ghost text and the chat window
-  have never been exercised under gvim.
-- **Other platforms.** Only a linux-x64 server binary is bundled. macOS,
-  arm64 and Windows need their own, supplied via `'copilotcommand'`.
-- **Enterprise and proxy configuration.** No way to point at a GitHub
-  Enterprise endpoint or an HTTP proxy from Vim.
-- **Completion popup integration.** Suggestions are virtual text only and do
-  not participate in `ins-completion`.
-- **Multi-file agent edits.** Tools can read files and run commands, but the
-  agent cannot propose edits across several buffers.
-- **Workspace context.** Only the current buffer is sent; there is no
-  workspace indexing, so Copilot cannot see the rest of the project.
-- **Default mappings.** Accepting a suggestion needs a mapping you write
-  yourself; there is no `<Tab>` handling out of the box.
-- **Telemetry controls.** No surface for the server's telemetry settings.
+The implementation plans for the remaining Copilot work are verified and
+tracked in [`.ndx/plans/`](.ndx/plans/).
 
 ---
 

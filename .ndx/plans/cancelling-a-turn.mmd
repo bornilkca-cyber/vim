@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant User
+    participant Vim as Vim chat loop
+    participant Server as Copilot server
+
+    User->>Vim: Press Ctrl-C during a turn
+    Vim->>Server: $/cancelRequest with request id
+    Vim->>Vim: Mark turn cancelling
+    Note over Vim: Keep partial transcript
+    Server-->>Vim: Progress or terminal reply
+    Vim->>Vim: Ignore progress for cancelled token
+    Server-->>Vim: Response or error for original request
+    Vim->>Vim: Clear active turn state

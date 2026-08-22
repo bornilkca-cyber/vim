@@ -22,15 +22,20 @@ This plan deliberately targets a supported Debian/Ubuntu suite and one
 architecture at a time.  Cross-distribution, cross-architecture, and
 bit-identical language-server binaries are separate release concerns.
 
-**Implementation status: complete pending clean-chroot validation.** The
+**Implementation status: incomplete; implementation is complete pending
+clean-chroot validation.** The
 repository now has a native Debian source-package layout, deterministic build
 rules, standard `.deb`/`.buildinfo`/`.changes` targets, an autopkgtest smoke
 test, and a two-chroot comparison script.  Public source packages deliberately
 omit the proprietary server, matching the existing copyright policy; an
 approved internal build must inject it before creating the source package.
-`dpkg-source --before-build` and rule dry-runs pass locally.  Running the full
-build requires the declared `libacl1-dev` and `libgpm-dev` packages, while the
-final two-chroot check requires a configured `sbuild` environment.
+`dpkg-source --before-build` and rule dry-runs pass locally.  The comparison
+script now creates its `sbuild` output directories, passes the `.dsc` as the
+positional `sbuild` input, and omits `--arch` for a native build.  A Debian
+unstable `amd64` chroot was created and selected successfully, but its
+temporary `sbuild` dependency resolver cannot resolve the host's configured
+DNS server; the two-build comparison remains pending an environment where that
+resolver can fetch declared build dependencies.
 
 ## Approach / Steps
 
