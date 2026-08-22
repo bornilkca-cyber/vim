@@ -476,8 +476,14 @@ copilot_start(void)
     path = copilot_server_path();
     if (path == NULL || mch_getperm(path) < 0)
     {
-	semsg(_(e_cant_open_file_str),
-			      path == NULL ? (char_u *)COPILOT_SERVER : path);
+    if (p_cpcmd == NULL || *p_cpcmd == NUL)
+    {
+        emsg(_("E1611: Copilot language server is not installed; set 'copilotcommand'"));
+    }
+    else
+    {
+        semsg(_(e_cant_open_file_str), path);
+    }
 	vim_free(path);
 	return FAIL;
     }
