@@ -260,6 +260,9 @@ Path of the `copilot-language-server` executable. When empty, the binary
 shipped with Vim is used, that is
 `$VIMRUNTIME/copilot/copilot-language-server`.
 
+Only the linux-x64 server is bundled. On macOS, arm64 and Windows, set this
+option to an executable obtained for that system. Vim never downloads a server.
+
 ```vim
 set copilotcommand=/opt/copilot/copilot-language-server
 ```

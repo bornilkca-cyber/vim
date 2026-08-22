@@ -60,6 +60,8 @@ To sign out again use |:copilot| signout.
 	Path of the copilot-language-server executable.  When empty the
 	binary shipped with Vim is used, that is
 	"$VIMRUNTIME/copilot/copilot-language-server".
+	Only the Linux x64 server is bundled.  On other systems, set this to
+	an executable obtained for that system.  Vim never downloads a server.
 	This option cannot be set from a |modeline| or in the |sandbox|.
 
 ==============================================================================
@@ -181,7 +183,9 @@ E1606 means |:copilot-apply| was used outside the chat window.
 							*E1607* *E1608*
 E1607 means there is nothing to replace, E1608 that the cursor is not in a
 fenced code block.
-							*E1609*
-E1609 means there is no suggestion to accept.
+													*E1609* *E1611*
+E1609 means there is no suggestion to accept.  E1611 means the bundled
+language server is not installed.  Set 'copilotcommand' to an executable
+obtained for this system.
 
  vim:tw=78:ts=8:noet:ft=help:norl:

@@ -61,6 +61,11 @@ func Test_copilot_missing_server()
   set copilotcommand&
 endfunc
 
+func Test_copilot_missing_bundled_server()
+  set copilotcommand&
+  call assert_fails('copilot start', 'E1611:')
+endfunc
+
 func Test_copilot_status()
   call s:UseMock()
   copilot start
