@@ -4,6 +4,7 @@
 # that the ":copilot" commands use.  No network, no account.
 
 import json
+import os
 import sys
 
 DEVICE_CODE = "TEST-CODE"
@@ -84,12 +85,14 @@ def main():
             continue
 
         if method == "initialize":
+            version = ("proxy" if os.environ.get("HTTP_PROXY")
+                       == "http://proxy.invalid:3128" else "0.0.1")
             reply(msg_id, {
                 "capabilities": {
                     "textDocumentSync": {"openClose": True, "change": 2},
                     "inlineCompletionProvider": {},
                 },
-                "serverInfo": {"name": "Mock Copilot", "version": "0.0.1"},
+                "serverInfo": {"name": "Mock Copilot", "version": version},
             })
         elif method == "checkStatus":
             reply(msg_id, {"status": "OK", "user": "testuser"} if signed_in

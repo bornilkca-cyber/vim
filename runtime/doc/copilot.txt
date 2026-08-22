@@ -29,6 +29,11 @@ Your code is sent to the GitHub Copilot service.  Do not use this on material
 you are not allowed to share.  Authentication tokens are stored by the
 language server, not by Vim.
 
+Vim passes its environment to the language server.  Set standard proxy
+variables such as $HTTP_PROXY and $HTTPS_PROXY before starting Vim when the
+server supports them.  Vim does not configure a GitHub Enterprise endpoint;
+consult the language server documentation for supported Enterprise settings.
+
 ==============================================================================
 2. Setting up						*copilot-setup*
 
