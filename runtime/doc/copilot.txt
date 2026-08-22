@@ -74,6 +74,9 @@ To sign out again use |:copilot| signout.
 			Later messages continue the same conversation, so you
 			can refer back to what was said before.
 
+			Press CTRL-C while an answer is being generated to cancel
+			that turn.  Text already shown remains in the transcript.
+
 :copilot reset		Throw away the conversation and start a new one.
 
 The transcript uses the "copilotchat" filetype: headings and fenced code
@@ -120,6 +123,14 @@ idle for a moment in Insert mode, and is dropped again when you leave Insert
 mode or move on.  Only one request is in flight at a time.
 
 Indentation follows 'expandtab' and 'shiftwidth'.
+
+To opt in to mappings for the current defaults, put this in your |vimrc|: >
+	let g:copilot_default_mappings = 1
+<
+When enabled before the runtime plugins load, <Tab> accepts a suggestion when
+one is visible and otherwise inserts a Tab.  CTRL-] dismisses a visible
+suggestion.  Vim does not replace either mapping when it already exists, so
+custom mappings and completion plugins keep their behavior.
 
 ==============================================================================
 6. Agent tools						*copilot-tools*
@@ -183,5 +194,9 @@ E1607 means there is nothing to replace, E1608 that the cursor is not in a
 fenced code block.
 							*E1609*
 E1609 means there is no suggestion to accept.
+
+*E1610*
+E1610 means a previous chat turn did not finish.  Use `:copilot stop` to close
+the server and start a new conversation.
 
  vim:tw=78:ts=8:noet:ft=help:norl:

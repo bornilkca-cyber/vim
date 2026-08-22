@@ -4,6 +4,7 @@ set -eu
 
 suite=${1:?usage: check-reproducible SUITE [ARCH]}
 arch=${2:-$(dpkg-architecture -qDEB_HOST_ARCH)}
+host_arch=$(dpkg-architecture -qDEB_HOST_ARCH)
 top=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/vim-copilot-repro.XXXXXX")
 
@@ -20,9 +21,15 @@ trap cleanup EXIT HUP INT TERM
 dsc=$(find "$work" -maxdepth 1 -name 'vim-copilot_*.dsc' -print -quit)
 test -n "$dsc"
 
+arch_arg=
+if test "$arch" != "$host_arch"; then
+    arch_arg=--arch="$arch"
+fi
+
 for build in one two; do
-    sbuild --dist="$suite" --arch="$arch" --build="$dsc" \
-	--build-dir="$work/$build" --no-run-lintian
+    mkdir -p "$work/$build"
+    sbuild --dist="$suite" $arch_arg --build-dir="$work/$build" \
+	--no-run-lintian "$dsc"
 done
 
 first=$(find "$work/one" -name 'vim-copilot_*.deb' -print -quit)
