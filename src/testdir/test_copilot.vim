@@ -27,6 +27,7 @@ func s:Cleanup()
     execute 'bwipe!' nr
   endif
   set copilotcommand&
+  set copilotworkspace&
 endfunc
 
 func Test_copilot_feature()
@@ -40,6 +41,14 @@ func Test_copilot_option()
   let &copilotcommand = '/path/to/server'
   call assert_equal('/path/to/server', &copilotcommand)
   set copilotcommand&
+endfunc
+
+func Test_copilot_workspace_option()
+  set copilotworkspace&
+  call assert_equal('', &copilotworkspace)
+  let &copilotworkspace = getcwd()
+  call assert_equal(getcwd(), &copilotworkspace)
+  set copilotworkspace&
 endfunc
 
 func Test_copilot_bad_subcommand()
@@ -66,6 +75,23 @@ func Test_copilot_status()
   copilot start
   call assert_match('signed in as testuser', execute('copilot status'))
   call assert_match('0\.0\.1', execute('copilot version'))
+  call s:Cleanup()
+endfunc
+
+func Test_copilot_workspace()
+  call s:UseMock()
+  call mkdir('Xcopilot workspace', 'p')
+  let &copilotworkspace = fnamemodify('Xcopilot workspace', ':p')
+  copilot start
+  call assert_match('workspace', execute('copilot version'))
+  call s:Cleanup()
+  call delete('Xcopilot workspace', 'd')
+endfunc
+
+func Test_copilot_bad_workspace()
+  call s:UseMock()
+  let &copilotworkspace = '/does/not/exist/copilot-workspace'
+  call assert_fails('copilot start', 'E1612:')
   call s:Cleanup()
 endfunc
 

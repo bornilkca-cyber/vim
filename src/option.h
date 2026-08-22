@@ -565,6 +565,7 @@ EXTERN char_u	*p_cpo;		// 'cpoptions'
 #ifdef FEAT_COPILOT
 EXTERN int	p_copilot;	// 'copilot'
 EXTERN char_u	*p_cpcmd;	// 'copilotcommand'
+EXTERN char_u	*p_cpws;	// 'copilotworkspace'
 #endif
 #ifdef FEAT_CSCOPE
 EXTERN char_u	*p_csprg;	// 'cscopeprg'

@@ -56,6 +56,7 @@ static void copilot_tool_run(void);
 static void copilot_tool_forget(void);
 static int copilot_tool_pending(void);
 static void copilot_register_tools(void);
+static char_u *copilot_file_uri(char_u *path);
 
 /*
  * Return the path of the language server in allocated memory, or NULL.
@@ -393,7 +394,10 @@ copilot_init_params(void)
     dict_T	*plugin = dict_alloc();
     dict_T	*opts = dict_alloc();
     dict_T	*caps = dict_alloc();
-    char_u	*cwd;
+    char_u	expanded[MAXPATHL];
+    char_u	root[MAXPATHL];
+    char_u	*uri;
+    int		workspace = p_cpws != NULL && *p_cpws != NUL;
 
     if (params == NULL || editor == NULL || plugin == NULL || opts == NULL
 	    || caps == NULL)
@@ -407,18 +411,47 @@ copilot_init_params(void)
     }
     dict_add_number(params, "processId", (varnumber_T)mch_get_pid());
 
-    cwd = alloc(MAXPATHL);
-    if (cwd != NULL && mch_dirname(cwd, MAXPATHL) == OK)
+    if (workspace)
     {
-	char_u	*uri = concat_str((char_u *)"file://", cwd);
-
-	if (uri != NULL)
-	{
-	    dict_add_string(params, "rootUri", uri);
-	    vim_free(uri);
-	}
+    expand_env(p_cpws, expanded, MAXPATHL);
+    if (vim_FullName(expanded, root, MAXPATHL, FALSE) == FAIL
+        || !mch_isdir(root))
+    {
+        emsg(_("E1612: Copilot workspace is not an existing directory"));
+        goto fail;
     }
-    vim_free(cwd);
+    }
+    else if (mch_dirname(root, MAXPATHL) == FAIL)
+    root[0] = NUL;
+
+
+    uri = root[0] == NUL ? NULL : copilot_file_uri(root);
+    if (uri != NULL)
+    {
+    dict_add_string(params, "rootUri", uri);
+    if (workspace)
+	{
+        list_T	*folders = list_alloc();
+        dict_T	*folder = dict_alloc();
+        dict_T	*workspace_caps = dict_alloc();
+
+        if (folders == NULL || folder == NULL || workspace_caps == NULL)
+        {
+        list_unref(folders);
+        dict_unref(folder);
+        dict_unref(workspace_caps);
+        vim_free(uri);
+        goto fail;
+        }
+        dict_add_string(folder, "uri", uri);
+        dict_add_string(folder, "name", root);
+        list_append_dict(folders, folder);
+        dict_add_list(params, "workspaceFolders", folders);
+        dict_add_bool(workspace_caps, "workspaceFolders", VVAL_TRUE);
+        dict_add_dict(caps, "workspace", workspace_caps);
+	}
+    vim_free(uri);
+    }
 
     // The server rejects conversation requests without these.
     dict_add_string(editor, "name", (char_u *)"Vim");
@@ -430,6 +463,14 @@ copilot_init_params(void)
     dict_add_dict(params, "initializationOptions", opts);
     dict_add_dict(params, "capabilities", caps);
     return params;
+
+fail:
+    dict_unref(params);
+    dict_unref(editor);
+    dict_unref(plugin);
+    dict_unref(opts);
+    dict_unref(caps);
+    return NULL;
 }
 
     static void
@@ -466,6 +507,7 @@ copilot_start(void)
 {
     char_u	*path;
     char	*argv[3];
+    dict_T	*params;
     jobopt_T	opt;
     int		id;
 
@@ -507,8 +549,13 @@ copilot_start(void)
     ++cop_channel->ch_refcount;
     cop_channel->ch_c_callback = copilot_msg_cb;
 
-    id = copilot_request("initialize", copilot_init_params(),
-						  copilot_initialize_cb, NULL);
+    params = copilot_init_params();
+    if (params == NULL)
+    {
+	copilot_stop();
+	return FAIL;
+    }
+    id = copilot_request("initialize", params, copilot_initialize_cb, NULL);
     if (id == 0)
     {
 	copilot_stop();
@@ -584,20 +631,17 @@ copilot_byte_col(char_u *line, int u16col)
 }
 
 /*
- * Return a file:// URI for "buf" in allocated memory, or NULL.
+ * Return a file:// URI for "path" in allocated memory.
  */
     static char_u *
-copilot_uri(buf_T *buf)
+copilot_file_uri(char_u *path)
 {
     garray_T	ga;
     char_u	*p;
 
-    if (buf->b_ffname == NULL)
-	return NULL;
-
     ga_init2(&ga, 1, 200);
     ga_concat(&ga, (char_u *)"file://");
-    for (p = buf->b_ffname; *p != NUL; ++p)
+    for (p = path; *p != NUL; ++p)
     {
 	if (ASCII_ISALNUM(*p) || vim_strchr((char_u *)"-._~/", *p) != NULL)
 	    ga_append(&ga, *p);
@@ -611,6 +655,15 @@ copilot_uri(buf_T *buf)
     }
     ga_append(&ga, NUL);
     return (char_u *)ga.ga_data;
+}
+
+/*
+ * Return a file:// URI for "buf" in allocated memory, or NULL.
+ */
+    static char_u *
+copilot_uri(buf_T *buf)
+{
+    return buf->b_ffname == NULL ? NULL : copilot_file_uri(buf->b_ffname);
 }
 
 /*

@@ -84,12 +84,26 @@ def main():
             continue
 
         if method == "initialize":
+            version = "0.0.1"
+            folders = params.get("workspaceFolders")
+            if folders is not None:
+                workspace = params.get("capabilities", {}).get("workspace", {})
+                root_uri = params.get("rootUri")
+                if (not isinstance(folders, list) or len(folders) != 1
+                        or folders[0].get("uri") != root_uri
+                        or not folders[0].get("name")
+                        or not root_uri.startswith("file://")
+                        or " " in root_uri
+                        or not workspace.get("workspaceFolders")):
+                    error(msg_id, -32602, "Invalid workspace folders")
+                    continue
+                version = "workspace"
             reply(msg_id, {
                 "capabilities": {
                     "textDocumentSync": {"openClose": True, "change": 2},
                     "inlineCompletionProvider": {},
                 },
-                "serverInfo": {"name": "Mock Copilot", "version": "0.0.1"},
+                "serverInfo": {"name": "Mock Copilot", "version": version},
             })
         elif method == "checkStatus":
             reply(msg_id, {"status": "OK", "user": "testuser"} if signed_in

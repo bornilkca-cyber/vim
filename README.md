@@ -266,6 +266,17 @@ set copilotcommand=/opt/copilot/copilot-language-server
 
 This option cannot be set from a modeline or in the sandbox.
 
+### `'copilotworkspace'` (`'cpws'`) - string, default `""`
+
+When set to an existing directory, sends that directory as workspace metadata
+when starting the language server. Vim does not scan or send workspace files;
+files are still sent only when opened or changed in Vim. Restart Copilot after
+changing this option. It cannot be set from a modeline or in the sandbox.
+
+```vim
+set copilotworkspace=~/src/project
+```
+
 ### A sample vimrc
 
 ```vim
@@ -407,6 +418,7 @@ server binary.
 | `E1607` | There is nothing to replace. |
 | `E1608` | The cursor is not in a fenced code block. |
 | `E1609` | There is no suggestion to accept. |
+| `E1612` | `'copilotworkspace'` is not an existing directory. |
 
 `:help copilot` has the full reference. `:copilot debug` and
 `:call ch_logfile('/tmp/ch.log', 'w')` are the diagnosis tools.
