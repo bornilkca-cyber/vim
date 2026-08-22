@@ -417,6 +417,25 @@ server binary.
 
 ### The Debian package
 
+On Ubuntu, install the packaging and build tools first:
+
+```sh
+sudo apt update
+sudo apt install git make clang libtool-bin dpkg-dev
+```
+
+The proprietary language server is not included in the source repository.
+Before packaging, place the licensed executable at
+`runtime/copilot/copilot-language-server` and make it executable:
+
+```sh
+test -x runtime/copilot/copilot-language-server
+```
+
+The preflight check should succeed before continuing. Without the server, the
+package can still be created, but Copilot cannot start from the installed
+package.
+
 ```sh
 make deb-configure   # once, or after changing configure options
 make deb             # builds, stages and packs
@@ -426,6 +445,14 @@ This produces `vim-copilot_<version>+<codename>_<arch>.deb` in the source
 root. Version, distribution codename, architecture, dependencies and installed
 size are all derived at build time; nothing is hardcoded. See
 [debian-copilot/build-deb.sh](debian-copilot/build-deb.sh).
+
+Verify the resulting package before installing it:
+
+```sh
+dpkg-deb --info vim-copilot_*.deb
+dpkg-deb --contents vim-copilot_*.deb \
+  | grep '/usr/bin/vim-copilot\|copilot-language-server'
+```
 
 If `dpkg-dev` is installed, `dpkg-shlibdeps` computes the dependencies;
 otherwise the script resolves each binary's sonames with `dpkg -S`.
