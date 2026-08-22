@@ -498,6 +498,9 @@ The 17 tests drive `test_copilot_server.py`, a mock LSP server, so they need
 no network access and no GitHub account. An empty `test_copilot.res` means
 everything passed.
 
+The focused suite is also run against a GTK3 GUI build under Xvfb. It covers
+chat output and multibyte inline-suggestion acceptance without network access.
+
 ---
 
 ## TODO
