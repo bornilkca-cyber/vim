@@ -417,20 +417,57 @@ server binary.
 
 ### The Debian package
 
+**Completed:** Debian packages now build from a source package with fixed
+timestamps and can be verified in two clean `sbuild` chroots.
+
+On Debian or Ubuntu, install the build tools and declared dependencies first:
+
 ```sh
-make deb-configure   # once, or after changing configure options
-make deb             # builds, stages and packs
+sudo apt update
+sudo apt install build-essential debhelper devscripts diffoscope dpkg-dev \
+  libacl1-dev libgpm-dev libncurses-dev libtool-bin pkg-config sbuild
 ```
 
-This produces `vim-copilot_<version>+<codename>_<arch>.deb` in the source
-root. Version, distribution codename, architecture, dependencies and installed
-size are all derived at build time; nothing is hardcoded. See
-[debian-copilot/build-deb.sh](debian-copilot/build-deb.sh).
+The proprietary language server is not included in the public source package.
+After installation, configure `'copilotcommand'` to point to an executable you
+obtained separately.  An approved internal build may bundle a licensed,
+architecture-matched executable at `runtime/copilot/copilot-language-server`
+before creating the source package; see [debian/README.source](debian/README.source).
 
-If `dpkg-dev` is installed, `dpkg-shlibdeps` computes the dependencies;
-otherwise the script resolves each binary's sonames with `dpkg -S`.
+```sh
+make deb-src       # creates .dsc and source tarball artifacts
+make deb           # creates .deb, .buildinfo and .changes artifacts
+```
 
-`make deb-clean` removes the staging tree and any built packages.
+The artifacts are written to the parent directory of the source checkout.
+`debian/changelog` is the authoritative package version, maintainer and build
+timestamp.  `debian/rules` exports that timestamp as `SOURCE_DATE_EPOCH` for
+configure, compilation, installation and package assembly.
+
+For a release build, configure an `sbuild` chroot for the target suite, then
+build the same source package twice in fresh chroots:
+
+```sh
+make deb-sbuild DEB_SUITE=unstable DEB_ARCH=amd64
+```
+
+The verification compares the resulting `.deb` files byte-for-byte and runs
+`diffoscope` when they differ.  `make deb` is useful for local iteration but
+is not a clean-chroot reproducibility check.
+
+Verify the resulting package before installing it:
+
+```sh
+dpkg-deb --info ../vim-copilot_*.deb
+dpkg-deb --contents ../vim-copilot_*.deb \
+  | grep '/usr/bin/vim-copilot\|copilot-language-server'
+```
+
+Use `lintian ../vim-copilot_*.changes` to inspect the package metadata.  The
+package build uses `dh_shlibdeps` to calculate shared-library dependencies.
+
+`make deb-clean` removes the Debian build tree and helper files.  Remove the
+artifacts in the parent directory separately when they are no longer needed.
 
 ### A plain build
 
@@ -473,8 +510,6 @@ Not implemented yet, roughly in order of how much they are missed:
   arm64 and Windows need their own, supplied via `'copilotcommand'`.
 - **Enterprise and proxy configuration.** No way to point at a GitHub
   Enterprise endpoint or an HTTP proxy from Vim.
-- **Cancelling a turn.** A long generation runs to completion; there is no
-  `$/cancelRequest`.
 - **Completion popup integration.** Suggestions are virtual text only and do
   not participate in `ins-completion`.
 - **Multi-file agent edits.** Tools can read files and run commands, but the
@@ -484,8 +519,6 @@ Not implemented yet, roughly in order of how much they are missed:
 - **Default mappings.** Accepting a suggestion needs a mapping you write
   yourself; there is no `<Tab>` handling out of the box.
 - **Telemetry controls.** No surface for the server's telemetry settings.
-- **Reproducible packaging.** The `.deb` is not built in a clean chroot and
-  carries no `.buildinfo`.
 
 ---
 

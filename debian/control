@@ -1,0 +1,30 @@
+Source: vim-copilot
+Section: editors
+Priority: optional
+Maintainer: vim-copilot <root@reverb>
+Build-Depends: debhelper-compat (= 13),
+               libacl1-dev,
+               libgpm-dev,
+               libncurses-dev,
+               libtool-bin,
+               pkg-config
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://www.vim.org
+
+Package: vim-copilot
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Recommends: ca-certificates, git
+Suggests: vim
+Provides: editor
+Description: Vi IMproved with native GitHub Copilot support
+ A fork of Vim 9.2 that implements GitHub Copilot directly in the C core, with
+ no plugin manager, no VimScript shim and no Node.js runtime.
+ .
+ The editor talks to a Copilot language server over Vim's built-in LSP channel
+ mode and adds chat, inline ghost-text completions, and an agent mode.
+ .
+ The proprietary Copilot language server is not included in public source
+ packages.  Configure 'copilotcommand' to point to an executable obtained
+ separately.
