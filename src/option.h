@@ -562,6 +562,10 @@ EXTERN char_u	*p_pb;		// 'pumborder'
 EXTERN char_u	*p_pumopt;	// 'pumopt'
 EXTERN char_u	*p_com;		// 'comments'
 EXTERN char_u	*p_cpo;		// 'cpoptions'
+#ifdef FEAT_COPILOT
+EXTERN int	p_copilot;	// 'copilot'
+EXTERN char_u	*p_cpcmd;	// 'copilotcommand'
+#endif
 #ifdef FEAT_CSCOPE
 EXTERN char_u	*p_csprg;	// 'cscopeprg'
 EXTERN int	p_csre;		// 'cscoperelative'

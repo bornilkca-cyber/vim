@@ -6878,6 +6878,13 @@ f_has(typval_T *argvars, typval_T *rettv)
 		0
 #endif
 		},
+	{"copilot",
+#ifdef FEAT_COPILOT
+		1
+#else
+		0
+#endif
+		},
 	{"cryptv",
 #ifdef FEAT_CRYPT
 		1

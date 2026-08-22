@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -eu
+
+suite=${1:?usage: check-reproducible SUITE [ARCH]}
+arch=${2:-$(dpkg-architecture -qDEB_HOST_ARCH)}
+top=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
+work=$(mktemp -d "${TMPDIR:-/tmp}/vim-copilot-repro.XXXXXX")
+
+cleanup()
+{
+    rm -rf "$work"
+}
+trap cleanup EXIT HUP INT TERM
+
+(
+    cd "$work"
+    dpkg-source -b "$top"
+)
+dsc=$(find "$work" -maxdepth 1 -name 'vim-copilot_*.dsc' -print -quit)
+test -n "$dsc"
+
+for build in one two; do
+    sbuild --dist="$suite" --arch="$arch" --build="$dsc" \
+	--build-dir="$work/$build" --no-run-lintian
+done
+
+first=$(find "$work/one" -name 'vim-copilot_*.deb' -print -quit)
+second=$(find "$work/two" -name 'vim-copilot_*.deb' -print -quit)
+test -n "$first" && test -n "$second"
+
+if ! cmp -s "$first" "$second"; then
+    if command -v diffoscope >/dev/null 2>&1; then
+	diffoscope "$first" "$second"
+    fi
+    echo "vim-copilot packages differ" >&2
+    exit 1
+fi

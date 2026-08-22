@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eu
+
+test -x /usr/bin/vim-copilot
+vim-copilot --version >/dev/null

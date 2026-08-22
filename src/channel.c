@@ -3526,6 +3526,10 @@ may_invoke_callback(channel_T *channel, ch_part_T part)
 								       seq_nr);
 	}
     }
+#ifdef FEAT_COPILOT
+    else if (channel->ch_c_callback != NULL && listtv != NULL)
+	channel->ch_c_callback(channel, listtv);
+#endif
     else if (callback != NULL || buffer != NULL)
     {
 	if (buffer != NULL)
@@ -4507,6 +4511,24 @@ channel_in_blocking_wait(void)
 {
     return channel_blocking_wait > 0;
 }
+
+#if defined(FEAT_COPILOT) || defined(PROTO)
+/*
+ * Wait up to "timeout" msec for data on "part" and read it.  Used by callers
+ * that need to block without a typeahead-driven main loop.
+ * Return TRUE when something was read.
+ */
+    int
+channel_wait_and_read(channel_T *channel, ch_part_T part, int timeout)
+{
+    sock_T	fd = channel->ch_part[part].ch_fd;
+
+    if (fd == INVALID_FD || channel_wait(channel, fd, timeout) != CW_READY)
+	return FALSE;
+    channel_read(channel, part, "channel_wait_and_read");
+    return TRUE;
+}
+#endif
 
 /*
  * Read one JSON message with ID "id" from "channel"/"part" and store the

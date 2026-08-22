@@ -2363,6 +2363,34 @@ if test "$enable_terminal" = "yes" -a "$enable_channel" = "yes"; then
   AC_SUBST(TERM_TEST)
 fi
 
+AC_MSG_CHECKING(--enable-copilot argument)
+AC_ARG_ENABLE(copilot,
+	[  --enable-copilot        Enable native GitHub Copilot support.],
+	, [enable_copilot="auto"])
+if test "$enable_copilot" = "yes" || test "$enable_copilot" = "auto" -a "x$features" = "xhuge" ; then
+  if test "$has_eval" = "no"; then
+    AC_MSG_RESULT([cannot use copilot with tiny features])
+    enable_copilot="no"
+  else
+    if test "$enable_copilot" = "auto"; then
+      enable_copilot="yes"
+      AC_MSG_RESULT(defaulting to yes)
+    else
+      AC_MSG_RESULT(yes)
+    fi
+  fi
+else
+  if test "$enable_copilot" = "auto"; then
+    enable_copilot="no"
+    AC_MSG_RESULT(defaulting to no)
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi
+if test "$enable_copilot" = "yes" -a "$enable_channel" = "yes"; then
+  AC_DEFINE(FEAT_COPILOT)
+fi
+
 AC_MSG_CHECKING(--enable-autoservername argument)
 AC_ARG_ENABLE(autoservername,
 	[  --enable-autoservername Automatically define servername at vim startup.], ,

@@ -1099,6 +1099,19 @@
 #endif
 
 /*
+ * +copilot		":copilot" command.  Native GitHub Copilot chat.
+ *			Talks LSP JSON-RPC to copilot-language-server over a
+ *			pipe, so it requires +channel; the chat window and
+ *			ghost text require +textprop.
+ */
+#if defined(FEAT_COPILOT) && !defined(FEAT_JOB_CHANNEL)
+# undef FEAT_COPILOT
+#endif
+#if defined(FEAT_COPILOT) && !defined(FEAT_PROP_POPUP)
+# undef FEAT_COPILOT
+#endif
+
+/*
  * +image		RGB image rendering inside popup windows.
  * +image_sixel		terminal backend: emit DEC sixel DCS sequences.
  * +image_kitty		terminal backend: emit kitty graphics protocol APC
