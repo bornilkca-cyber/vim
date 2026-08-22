@@ -53,6 +53,32 @@ all install uninstall tools config configure reconfig proto depend lint types te
 		(cd runtime/syntax && $(MAKE) clean); \
 	fi
 
+# Build a vim-copilot Debian package.  "deb-configure" only has to be run once,
+# or after changing configure options; "deb" does the build, staging and
+# packing.  See debian-copilot/build-deb.sh.
+DEB_CFLAGS = -O2 -fno-strength-reduce -Wall -Wno-deprecated-declarations \
+		-D_REENTRANT -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+
+deb-configure:
+	cd src && rm -f auto/config.cache auto/pathdef.c && ./configure \
+		--prefix=/usr \
+		--with-features=huge \
+		--enable-copilot \
+		--with-vim-name=vim-copilot \
+		--with-ex-name=ex-copilot \
+		--with-view-name=view-copilot \
+		--with-modified-by=vim-copilot \
+		CFLAGS="$(DEB_CFLAGS)"
+
+deb:
+	$(SHELL) debian-copilot/build-deb.sh
+
+deb-clean:
+	-rm -rf src/deb-root
+	-rm -f vim-copilot_*.deb
+
+.PHONY: deb deb-configure deb-clean
+
 # Executable used for running the indent tests.
 VIM_FOR_INDENTTEST = ../../src/vim
 

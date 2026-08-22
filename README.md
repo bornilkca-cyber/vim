@@ -1,157 +1,509 @@
-# [![Vim The editor](https://github.com/vim/vim/raw/master/runtime/vimlogo.gif)](https://www.vim.org)
+# vim-copilot
 
-[![Github Build status](https://github.com/vim/vim/workflows/GitHub%20CI/badge.svg)](https://github.com/vim/vim/actions?query=workflow%3A%22GitHub+CI%22)
-[![Coverage Status](https://codecov.io/gh/vim/vim/coverage.svg?branch=master)](https://codecov.io/gh/vim/vim?branch=master)
-[![Coverity Scan](https://scan.coverity.com/projects/241/badge.svg)](https://scan.coverity.com/projects/vim)
-[![Debian CI](https://badges.debian.net/badges/debian/testing/vim/version.svg)](https://buildd.debian.org/vim)
-[![Packages](https://repology.org/badge/tiny-repos/vim.svg)](https://repology.org/metapackage/vim)
-[![Fossies codespell report](https://fossies.org/linux/test/vim-master.tar.gz/codespell.svg)](https://fossies.org/linux/test/vim-master.tar.gz/codespell.html)
+Vim 9.2 with GitHub Copilot built into the C core.
 
-If you find a bug or want to discuss the best way to add a new feature, please
-[open an issue](https://github.com/vim/vim/issues/new/choose).
-If you have a question or want to discuss the best way to do something with
-Vim, you can join [`#vim`](https://web.libera.chat/#vim),
-[reddit.com/r/vim](https://reddit.com/r/vim),
-use [StackExchange](https://vi.stackexchange.com/),
-or one of the [Maillists](https://www.vim.org/community.php).
+There is no plugin, no plugin manager, no VimScript shim and no Node.js
+runtime. Vim starts the Copilot language server as a job and speaks LSP
+JSON-RPC to it over a pipe, with framing handled by the existing channel
+layer. Everything is driven by one command, `:copilot`, and two options.
 
-## What is Vim?
-
-Vim is a greatly improved version of the good old UNIX editor
-[Vi](https://en.wikipedia.org/wiki/Vi_(text_editor)).  Many new
-features have been added: multi-level undo, syntax highlighting, command line
-history, on-line help, spell checking, filename completion, block operations,
-script language, etc.  There is also a Graphical User Interface (GUI)
-available.  Still, Vi compatibility is maintained, those who have Vi "in the
-fingers" will feel at home.
-See [`runtime/doc/vi_diff.txt`](runtime/doc/vi_diff.txt) for differences with
-Vi.
-
-This editor is very useful for editing programs and other plain text files.
-All commands are given with normal keyboard characters, so those who can type
-with ten fingers can work very fast.  Additionally, function keys can be
-mapped to commands by the user, and the mouse can be used.
-
-Vim also aims to provide a (mostly) POSIX-compatible vi implementation, when
-compiled with a minimal feature set (typically called vim.tiny), which is used
-by many Linux distributions as the default vi editor.
-
-Vim runs under MS-Windows (7, 8, 10, 11), macOS, Haiku, VMS and almost all
-flavours of UNIX.  Porting to other systems should not be very difficult.
-Older versions of Vim run on MS-DOS, MS-Windows 95/98/Me/NT/2000/XP/Vista,
-Amiga DOS, Atari MiNT, BeOS, RISC OS and OS/2.  These are no longer maintained.
-
-For Vim9 script see [README_VIM9](README_VIM9.md).
-
-## Distribution
-
-You can often use your favorite package manager to install Vim.  On Mac and
-Linux a small version of Vim is pre-installed, you still need to install Vim
-if you want more features.
-
-There are separate distributions for Unix, PC, Amiga and some other systems.
-This `README.md` file comes with the runtime archive.  It includes the
-documentation, syntax files and other files that are used at runtime.  To run
-Vim you must get either one of the binary archives or a source archive.
-Which one you need depends on the system you want to run it on and whether you
-want or must compile it yourself.  Check https://www.vim.org/download.php for
-an overview of currently available distributions.
-
-Some popular places to get the latest Vim:
-* Check out the git repository from [GitHub](https://github.com/vim/vim).
-* Get the source code as an [archive](https://github.com/vim/vim/tags).
-* Get a Windows executable from the
-[vim-win32-installer](https://github.com/vim/vim-win32-installer/releases) repository.
-
-## Compiling
-
-If you obtained a binary distribution you don't need to compile Vim.  If you
-obtained a source distribution, all the stuff for compiling Vim is in the
-[`src`](./src/) directory.  See [`src/INSTALL`](./src/INSTALL) for instructions.
-
-## Installation
-
-See one of these files for system-specific instructions.  Either in the
-[READMEdir directory](./READMEdir/) (in the repository) or
-the top directory (if you unpack an archive):
+The package installs as `vim-copilot` and keeps every file it owns under
+`/usr/share/vim-copilot`, so it can be installed next to your distribution's
+own `vim` without sharing, replacing or shadowing a single file.
 
 ```
-README_ami.txt		Amiga
-README_unix.txt		Unix
-README_dos.txt		MS-DOS and MS-Windows
-README_mac.txt		Macintosh
-README_haiku.txt	Haiku
-README_vms.txt		VMS
+$ vim-copilot --version | head -3
+VIM - Vi IMproved 9.2 (2026 Feb 14, compiled Aug 22 2026 06:23:45)
+Included patches: 1-993
+Modified by vim-copilot
 ```
 
-There are other `README_*.txt` files, depending on the distribution you used.
+---
 
-## Documentation
+## Contents
 
-The Vim tutor is a one hour training course for beginners.  Often it can be
-started as `vimtutor`.  See `:help tutor` for more information.
+- [How it works](#how-it-works)
+- [Install](#install)
+- [Setup](#setup)
+- [Configure](#configure)
+- [Usage](#usage)
+- [Security](#security)
+- [Errors](#errors)
+- [Building from source](#building-from-source)
+- [TODO](#todo)
+- [Upstream Vim](#upstream-vim)
 
-The best is to use `:help` in Vim.  If you don't have an executable yet, read
-[`runtime/doc/help.txt`](./runtime/doc/help.txt).
-It contains pointers to the other documentation files.
-The User Manual reads like a book and is recommended to learn to use
-Vim.  See `:help user-manual`.
+---
 
-## Copying
+## How it works
 
-Vim is Charityware.  You can use and copy it as much as you like, but you are
-encouraged to make a donation to help orphans in Uganda.  Please read the file
-[`runtime/doc/uganda.txt`](./runtime/doc/uganda.txt)
-for details (do `:help uganda` inside Vim).
+```mermaid
+flowchart LR
+    subgraph vim["vim-copilot process"]
+        core["Vim core<br/>buffers, undo, text properties"]
+        cop["copilot.c<br/>:copilot command"]
+        ch["channel.c<br/>LSP mode framing"]
+        core <--> cop
+        cop <--> ch
+    end
 
-Summary of the license: There are no restrictions on using or distributing an
-unmodified copy of Vim.  Parts of Vim may also be distributed, but the license
-text must always be included.  For modified versions, a few restrictions apply.
-The license is GPL compatible, you may compile Vim with GPL libraries and
-distribute it.
+    srv["copilot-language-server<br/>$VIMRUNTIME/copilot/"]
+    api["GitHub Copilot service"]
+    tok[("~/.config/github-copilot/<br/>auth token")]
 
-## Sponsoring
+    ch <-->|"JSON-RPC over stdio"| srv
+    srv <-->|"HTTPS"| api
+    srv --- tok
+```
 
-Fixing bugs and adding new features takes a lot of time and effort.  To show
-your appreciation for the work and motivate developers to continue working on
-Vim please send a donation.
+Vim never handles your Copilot token; the language server stores it. The
+server is spawned lazily, on the first command that needs it.
 
-The money you donated will be mainly used to help children in Uganda.  See
-[`runtime/doc/uganda.txt`](./runtime/doc/uganda.txt).  But at the same time
-donations increase the development team motivation to keep working on Vim!
+The messages Vim exchanges with the server:
 
-For the most recent information about sponsoring look on the Vim web site:
-	https://www.vim.org/sponsor/
+| Direction | Message | When |
+| --- | --- | --- |
+| to server | `initialize` | server start |
+| to server | `checkStatus` | `:copilot status` |
+| to server | `signInInitiate`, `signInConfirm` | `:copilot signin` |
+| to server | `textDocument/didOpen`, `didChange`, `didClose` | buffer sync |
+| to server | `conversation/create`, `conversation/turn` | chat and slash commands |
+| to server | `conversation/registerTools` | agent mode |
+| to server | `textDocument/inlineCompletion` | inline suggestions |
+| from server | `$/progress` | streamed reply deltas |
+| from server | `window/showDocument` | sign-in URL |
+| from server | `conversation/invokeClientTool` | agent wants to run a tool |
 
-## Contributing
+### A chat turn
 
-If you would like to help make Vim better, see the
-[CONTRIBUTING.md](./CONTRIBUTING.md) file.
+Replies arrive as `$/progress` deltas that are appended to the transcript as
+they stream in.
 
-## Information
+```mermaid
+sequenceDiagram
+    participant U as You
+    participant V as vim-copilot
+    participant S as language server
 
-If you are on macOS, you can use [MacVim](https://macvim.org).
+    U->>V: ":copilot chat explain this"
+    V->>S: textDocument/didOpen + didChange
+    V->>S: textDocument/didFocus
+    V->>S: conversation/create (request N)
 
-The latest news about Vim can be found on the Vim home page:
-	https://www.vim.org/
+    loop while generating
+        S-->>V: "$/progress {reply: delta}"
+        V-->>U: append delta to [Copilot Chat]
+    end
 
-If you have problems, have a look at the Vim documentation or tips:
-	https://www.vim.org/docs.php
-	https://vim.fandom.com/wiki/Vim_Tips_Wiki
+    S-->>V: "$/progress {kind: end}"
+    Note over V,S: "end" arrives BEFORE the reply to request N,<br/>so the conversationId is taken from the progress<br/>payload and Vim also waits for N to clear
+    S-->>V: result for request N
+    V-->>U: turn complete
+```
 
-If you still have problems or any other questions, use one of the mailing
-lists to discuss them with Vim users and developers:
-	https://www.vim.org/maillist.php
+### An agent tool call
 
-If nothing else works, report bugs directly to the vim-dev mailing list:
-	`<vim-dev@vim.org>`
+```mermaid
+sequenceDiagram
+    participant U as You
+    participant V as vim-copilot
+    participant S as language server
 
-## Main author
+    U->>V: ":copilot agent tidy up the build"
+    V->>S: conversation/registerTools (vim_run_shell, vim_read_file)
+    V->>S: conversation/create (chatMode Agent)
+    S-->>V: conversation/invokeClientTool (vim_run_shell, "rm -rf build")
 
-Most of Vim was created by Bram Moolenaar `<Bram@vim.org>`
-[Bram-Moolenaar](https://vimhelp.org/version9.txt.html#Bram-Moolenaar)
+    Note over V: deferred out of the channel callback<br/>and handled on the main loop
+    V->>U: show tool and exact command, prompt "[N]o, (Y)es:"
 
-Send any other comments, patches, flowers and suggestions to the vim-dev mailing list:
-	`<vim-dev@vim.org>`
+    alt You answer No (also the default for a bare Enter)
+        U-->>V: No
+        V->>S: "the user declined to run the tool"
+    else You answer Yes
+        U-->>V: Yes
+        V->>V: run the command
+        V->>S: tool output
+    end
+```
 
-This is `README.md` for version 9.2 of Vim: Vi IMproved.
+### Inline suggestion lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Requested: ":copilot suggest"
+    Idle --> Requested: "Insert-mode idle, 'copilot' on"
+    Requested --> Shown: "server returns an item"
+    Requested --> Idle: "nothing returned"
+    Shown --> Inserted: ":copilot accept"
+    Shown --> Idle: ":copilot dismiss"
+    Shown --> Idle: "leaving Insert mode"
+    Inserted --> Idle: "undoable with u"
+```
+
+---
+
+## Install
+
+### From the Debian package
+
+```sh
+sudo dpkg -i vim-copilot_9.2.993+noble_amd64.deb
+sudo apt-get -f install        # only if dependencies are missing
+```
+
+Dependencies are `libc6`, `libtinfo6`, `libstdc++6` and `libgcc-s1`, all
+already present on a standard Debian or Ubuntu system.
+
+The package name records the distribution it was built on, because the glibc
+and ncurses sonames it links against are not portable across releases. Build
+your own with `make deb` if you run something else.
+
+### What gets installed
+
+```
+/usr/bin/vim-copilot                       the editor
+/usr/bin/{ex,view,rvim,rview}-copilot      symlinks, as for stock Vim
+/usr/bin/vim-copilotdiff                   symlink
+/usr/bin/vim-copilottutor                  tutor script
+/usr/share/vim-copilot/vim92/              runtime files
+/usr/share/vim-copilot/vim92/copilot/      bundled language server
+/usr/share/man/man1/vim-copilot*.1         manual pages
+/usr/share/doc/vim-copilot/                copyright, changelog, this README
+```
+
+### Coexistence with the system Vim
+
+The package deliberately does **not**:
+
+- install anything named `vim`, `vi`, `ex`, `view`, `xxd`, `vimdiff` or
+  `vimtutor`
+- write to `/usr/share/vim`, which belongs to `vim-runtime`
+- install `vim.desktop`, `gvim.desktop` or `gvim.png`, which belong to
+  `vim-common` and `vim-gui-common`
+- register anything with `update-alternatives`
+
+so it declares no `Conflicts` and no `Replaces`. Your `vim` keeps working
+exactly as before, and `update-alternatives --display vim` is untouched.
+
+Verify it yourself:
+
+```sh
+# no packaged path is owned by another package; this should print nothing
+dpkg -c vim-copilot_*.deb | awk '{print $6}' | sed 's|^\.||' \
+  | while read -r p; do dpkg -S "$p" 2>/dev/null; done
+
+# both editors work, with separate runtimes
+vim --version         | head -2
+vim-copilot --version | head -2
+update-alternatives --display vim
+```
+
+To remove it:
+
+```sh
+sudo dpkg -r vim-copilot
+```
+
+---
+
+## Setup
+
+Check the feature is compiled in:
+
+```vim
+:echo has('copilot')
+```
+
+Sign in using the GitHub device flow. Vim prints a URL and a one-time code;
+open the URL, enter the code, and Vim reports when authorisation completes.
+Press `CTRL-C` to give up.
+
+```vim
+:copilot signin
+```
+
+Confirm it worked:
+
+```vim
+:copilot status
+" Copilot: OK (signed in as your-username)
+```
+
+The token is stored by the language server under `~/.config/github-copilot/`,
+not by Vim. `:copilot signout` removes it.
+
+A GitHub Copilot subscription is required.
+
+---
+
+## Configure
+
+Two global options, both settable from your `vimrc`.
+
+### `'copilot'` (`'cop'`) — boolean, default `off`
+
+When on, suggestions are requested automatically whenever Vim goes idle in
+Insert mode.
+
+```vim
+set copilot
+```
+
+The server is started on the first suggestion rather than when the option is
+set, so putting this in a `vimrc` does not slow down startup.
+
+### `'copilotcommand'` (`'cpcmd'`) — string, default `""`
+
+Path of the `copilot-language-server` executable. When empty, the binary
+shipped with Vim is used, that is
+`$VIMRUNTIME/copilot/copilot-language-server`.
+
+```vim
+set copilotcommand=/opt/copilot/copilot-language-server
+```
+
+This option cannot be set from a modeline or in the sandbox.
+
+### A sample vimrc
+
+```vim
+" suggestions as you type
+set copilot
+
+" accept or dismiss the suggestion being shown
+inoremap <silent> <C-J> <Cmd>copilot accept<CR>
+inoremap <silent> <C-]> <Cmd>copilot dismiss<CR>
+
+" ask about the visual selection
+xnoremap <leader>ce :copilot explain<CR>
+xnoremap <leader>cf :copilot fix<CR>
+```
+
+---
+
+## Usage
+
+Every subcommand has command-line completion.
+
+### Chat
+
+| Command | Description |
+| --- | --- |
+| `:copilot chat {message}` | Send `{message}` and stream the answer into the `[Copilot Chat]` window. Later messages continue the same conversation. |
+| `:copilot reset` | Throw away the conversation and start a new one. |
+
+The transcript uses the `copilotchat` filetype, so headings and fenced code
+blocks are highlighted. It is an ordinary scratch buffer: search and yank in
+it as usual.
+
+### Working on code
+
+These take a range, by default the whole buffer. Use them from Visual mode to
+ask about a selection.
+
+| Command | Description |
+| --- | --- |
+| `:[range]copilot explain` | Explain what the code does. |
+| `:[range]copilot fix` | Point out problems and suggest fixes. |
+| `:[range]copilot tests` | Write tests for the code. |
+| `:[range]copilot doc` | Write documentation for the code. |
+| `:[range]copilot simplify` | Suggest a simpler version. |
+| `:copilot apply` | Replace the range the last command above ran on with the fenced code block under the cursor. |
+
+```vim
+:'<,'>copilot fix
+" then, in the chat window, with the cursor in the code block:
+:copilot apply
+```
+
+`:copilot apply` changes the buffer and can be undone with `u`.
+
+### Inline completions
+
+| Command | Description |
+| --- | --- |
+| `:copilot suggest` | Ask for a completion at the cursor, shown as grey virtual text. Only the not-yet-typed part is shown. |
+| `:copilot accept` | Insert the suggestion being shown. Undoable with `u`. |
+| `:copilot dismiss` | Remove the suggestion without inserting it. |
+
+With `'copilot'` on, suggestions are requested automatically once Vim has been
+idle for a moment in Insert mode, and dropped again when you leave Insert mode
+or move on. Only one request is in flight at a time. Indentation follows
+`'expandtab'` and `'shiftwidth'`.
+
+### Agent mode
+
+| Command | Description |
+| --- | --- |
+| `:copilot agent {message}` | Like `:copilot chat`, but Copilot may ask Vim to run tools on your machine. |
+
+See [Security](#security) below. `:copilot chat` switches back out of agent
+mode.
+
+### Server and session
+
+| Command | Description |
+| --- | --- |
+| `:copilot` or `:copilot status` | Report whether the server is running and who is signed in. |
+| `:copilot version` | Show the language server path and version. |
+| `:copilot start` | Start the server. |
+| `:copilot stop` | Stop the server and forget the conversation. |
+| `:copilot restart` | Stop and start again. |
+| `:copilot signin` | Sign in with the device flow. |
+| `:copilot signout` | Sign out. |
+| `:copilot debug` | Show how the current buffer looks to the server: URI, filetype, and cursor position in UTF-16 units. For diagnosis. |
+
+---
+
+## Security
+
+**Your code is sent to the GitHub Copilot service.** Do not use this on
+material you are not allowed to share. Buffers are synced to the server as you
+edit them, and `vim_read_file` sends a file's contents.
+
+Agent tools run on your machine, with your privileges. Before any tool runs,
+Vim shows exactly what was asked for and waits:
+
+```
+Copilot wants to run a tool.
+
+Tool: vim_run_shell
+Command: rm -rf build
+This runs on your machine with your privileges.
+Allow?
+[N]o, (Y)es:
+```
+
+- The answer **defaults to No**, so a stray `<CR>` is always safe.
+- Consent is asked for **every single call**. There is deliberately no way to
+  approve a tool once and for all, and no allow list.
+- Vim asks **even when the server does not request confirmation**. The
+  protocol permits the server to invoke a client tool directly, with no
+  confirmation round-trip, and it does so in practice. Consent is therefore
+  enforced entirely on the client side and never delegated to the server.
+
+Read the command before allowing it: it is chosen by a language model, and it
+runs as you.
+
+`'copilotcommand'` is a secure option and cannot be set from a modeline or in
+the sandbox, so opening a hostile file cannot redirect Vim to a different
+server binary.
+
+---
+
+## Errors
+
+| Code | Meaning |
+| --- | --- |
+| `E1600` | The language server could not be started. Check `'copilotcommand'`. |
+| `E1601` | The language server did not answer in time. |
+| `E1602` | Sign in failed. |
+| `E1603` | Sign in timed out. |
+| `E1604` | The buffer has no file name, so it cannot be sent to the server. |
+| `E1605` | Chat failed. |
+| `E1606` | `:copilot apply` was used outside the chat window. |
+| `E1607` | There is nothing to replace. |
+| `E1608` | The cursor is not in a fenced code block. |
+| `E1609` | There is no suggestion to accept. |
+
+`:help copilot` has the full reference. `:copilot debug` and
+`:call ch_logfile('/tmp/ch.log', 'w')` are the diagnosis tools.
+
+---
+
+## Building from source
+
+### The Debian package
+
+```sh
+make deb-configure   # once, or after changing configure options
+make deb             # builds, stages and packs
+```
+
+This produces `vim-copilot_<version>+<codename>_<arch>.deb` in the source
+root. Version, distribution codename, architecture, dependencies and installed
+size are all derived at build time; nothing is hardcoded. See
+[debian-copilot/build-deb.sh](debian-copilot/build-deb.sh).
+
+If `dpkg-dev` is installed, `dpkg-shlibdeps` computes the dependencies;
+otherwise the script resolves each binary's sonames with `dpkg -S`.
+
+`make deb-clean` removes the staging tree and any built packages.
+
+### A plain build
+
+```sh
+cd src
+./configure --with-features=huge --enable-copilot \
+            --with-vim-name=vim-copilot \
+            --with-ex-name=ex-copilot \
+            --with-view-name=view-copilot
+make
+```
+
+`--enable-copilot` defaults to `auto`, which enables the feature whenever
+`+job` and `+popup` are available, as they are in a `huge` build. `+copilot`
+appears in `:version` when it is on.
+
+The bundled server lives in `runtime/copilot/` and is installed by the
+`installcopilot` target, which `installruntime` pulls in.
+
+### Tests
+
+```sh
+cd src/testdir
+make test_copilot.res VIMPROG=../vim-copilot
+```
+
+The 17 tests drive `test_copilot_server.py`, a mock LSP server, so they need
+no network access and no GitHub account. An empty `test_copilot.res` means
+everything passed.
+
+---
+
+## TODO
+
+Not implemented yet, roughly in order of how much they are missed:
+
+- **GUI support.** The build is terminal-only. Ghost text and the chat window
+  have never been exercised under gvim.
+- **Other platforms.** Only a linux-x64 server binary is bundled. macOS,
+  arm64 and Windows need their own, supplied via `'copilotcommand'`.
+- **Enterprise and proxy configuration.** No way to point at a GitHub
+  Enterprise endpoint or an HTTP proxy from Vim.
+- **Cancelling a turn.** A long generation runs to completion; there is no
+  `$/cancelRequest`.
+- **Completion popup integration.** Suggestions are virtual text only and do
+  not participate in `ins-completion`.
+- **Multi-file agent edits.** Tools can read files and run commands, but the
+  agent cannot propose edits across several buffers.
+- **Workspace context.** Only the current buffer is sent; there is no
+  workspace indexing, so Copilot cannot see the rest of the project.
+- **Default mappings.** Accepting a suggestion needs a mapping you write
+  yourself; there is no `<Tab>` handling out of the box.
+- **Telemetry controls.** No surface for the server's telemetry settings.
+- **Reproducible packaging.** The `.deb` is not built in a clean chroot and
+  carries no `.buildinfo`.
+
+---
+
+## Upstream Vim
+
+This is a fork of [Vim](https://www.vim.org). Everything except the Copilot
+feature is the work of Bram Moolenaar and the Vim contributors, and is
+unchanged. The original README is kept as [README.txt](README.txt).
+
+Vim is Charityware. You can use and copy it as much as you like, but you are
+encouraged to make a donation for needy children in Uganda: see
+`:help uganda`, or [runtime/doc/uganda.txt](runtime/doc/uganda.txt).
+
+The bundled `copilot-language-server` is **proprietary software from GitHub,
+Inc.** It is not covered by the Vim license and requires a GitHub Copilot
+subscription. See [debian-copilot/copyright](debian-copilot/copyright).
+
+- Vim documentation: `:help`, or [runtime/doc/](runtime/doc/)
+- Copilot feature reference: `:help copilot`, or
+  [runtime/doc/copilot.txt](runtime/doc/copilot.txt)
+- Upstream repository: https://github.com/vim/vim

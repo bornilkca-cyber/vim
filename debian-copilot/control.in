@@ -1,0 +1,29 @@
+Package: vim-copilot
+Version: @VERSION@
+Section: editors
+Priority: optional
+Architecture: @ARCH@
+Maintainer: @MAINTAINER@
+Installed-Size: @INSTALLED_SIZE@
+Depends: @DEPENDS@
+Recommends: ca-certificates, git
+Suggests: vim
+Provides: editor
+Homepage: https://www.vim.org
+Description: Vi IMproved with native GitHub Copilot support
+ A fork of Vim @UPSTREAM_VERSION@ that implements GitHub Copilot directly in the
+ C core, with no plugin manager, no VimScript shim and no Node.js runtime.
+ .
+ The editor talks to a bundled copilot-language-server over Vim's built-in
+ LSP channel mode and adds a single :copilot command providing:
+ .
+  * chat in a dedicated window, with streamed replies
+  * slash commands over a range: explain, fix, tests, doc, simplify
+  * inline "ghost text" completions, optionally triggered automatically
+  * an agent mode that can run shell commands and read files, each of which
+    always requires explicit interactive confirmation
+ .
+ This package installs as vim-copilot and keeps all of its runtime files
+ under /usr/share/vim-copilot. It shares no file with the vim, vim-common,
+ vim-runtime or xxd packages, registers nothing with update-alternatives,
+ and can therefore be installed alongside the distribution's own Vim.

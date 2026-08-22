@@ -994,7 +994,9 @@ VIMMINOR = 2
 
 ### Location of Vim files (should not need to be changed, and  {{{1
 ### some things might not work when they are changed!)
-VIMDIR = /vim
+### This fork uses "vim-copilot" instead of "vim" so that it can be installed
+### alongside a distribution-provided Vim without sharing any file.
+VIMDIR = /vim-copilot
 VIMRTDIR = /vim$(VIMMAJOR)$(VIMMINOR)
 HELPSUBDIR = /doc
 COLSUBDIR = /colors
@@ -1013,6 +1015,7 @@ TOOLSSUBDIR = /tools
 TUTORSUBDIR = /tutor
 SPELLSUBDIR = /spell
 PRINTSUBDIR = /print
+COPILOTSUBDIR = /copilot
 PODIR = po
 
 ### VIMLOC	common root of the Vim files (all versions)
@@ -1059,6 +1062,7 @@ TOOLSSUBLOC	= $(VIMRTLOC)$(TOOLSSUBDIR)
 TUTORSUBLOC	= $(VIMRTLOC)$(TUTORSUBDIR)
 SPELLSUBLOC	= $(VIMRTLOC)$(SPELLSUBDIR)
 PRINTSUBLOC	= $(VIMRTLOC)$(PRINTSUBDIR)
+COPILOTSUBLOC	= $(VIMRTLOC)$(COPILOTSUBDIR)
 SCRIPTLOC	= $(VIMRTLOC)
 
 ### Only set VIMRUNTIMEDIR when VIMRTLOC is set to a different location and
@@ -1187,6 +1191,9 @@ KMAPSOURCE = ../runtime/keymap
 
 # Where to look for print resource files
 PRINTSOURCE = ../runtime/print
+
+# Where to look for the bundled Copilot language server
+COPILOTSOURCE = ../runtime/copilot
 
 # Where to look translated README and LICENSE files
 TRANSSOURCE = ../lang
@@ -1455,6 +1462,7 @@ DEST_TUTOR = $(DESTDIR)$(TUTORSUBLOC)
 DEST_SPELL = $(DESTDIR)$(SPELLSUBLOC)
 DEST_SCRIPT = $(DESTDIR)$(SCRIPTLOC)
 DEST_PRINT = $(DESTDIR)$(PRINTSUBLOC)
+DEST_COPILOT = $(DESTDIR)$(COPILOTSUBLOC)
 DEST_MAN_TOP = $(DESTDIR)$(MANDIR)
 
 # We assume that the ".../man/xx/man1/" directory is for latin1 manual pages.
@@ -2400,7 +2408,19 @@ INSTALLMANARGS = $(VIMLOC) $(SCRIPTLOC) $(VIMRCLOC) $(HELPSOURCE) $(MANMOD) \
 		$(VIMNAME) $(VIMDIFFNAME) $(EVIMNAME)
 
 # Install most of the runtime files
-installruntime: installrtbase installmacros installpack installtutor installspell
+installruntime: installrtbase installmacros installpack installtutor installspell \
+		installcopilot
+
+# Install the bundled Copilot language server, if it was unpacked.  It must
+# keep the execute bit, so INSTALL_PROG is used instead of INSTALL_DATA.
+installcopilot: $(DEST_VIM) $(DEST_RT) $(DEST_COPILOT)
+	@if test -f $(COPILOTSOURCE)/copilot-language-server; then \
+	   echo installing $(DEST_COPILOT)/copilot-language-server; \
+	   $(INSTALL_PROG) $(COPILOTSOURCE)/copilot-language-server $(DEST_COPILOT); \
+	   chmod $(BINMOD) $(DEST_COPILOT)/copilot-language-server; \
+	else \
+	   echo "No bundled Copilot language server found, skipping."; \
+	fi
 
 # Install the help files; first adjust the contents for the final location.
 # Also install most of the other runtime files.
@@ -2799,6 +2819,7 @@ $(DESTDIR)$(exec_prefix) $(DEST_BIN) \
 		$(DEST_SPELL) \
 		$(DEST_AUTO) $(DEST_AUTO)/dist $(DEST_AUTO)/xml \
 		$(DEST_AUTO)/cargo $(DEST_AUTO)/rust \
+		$(DEST_COPILOT) \
 		$(DEST_IMPORT) $(DEST_IMPORT)/dist $(DEST_PLUG):
 	$(MKDIR_P) $@
 	-chmod $(DIRMOD) $@
@@ -3000,6 +3021,7 @@ uninstall_runtime:
 	-rm -rf $(DEST_LANG)
 	-rm -rf $(DEST_KMAP)
 	-rm -rf $(DEST_COMP)
+	-rm -rf $(DEST_COPILOT)
 	-rm -f $(DEST_PRINT)/*.ps
 	-rmdir $(DEST_HELP) $(DEST_PRINT) $(DEST_COL) $(DEST_SYN)/shared
 	-rmdir $(DEST_SYN)/modula2/opt $(DEST_SYN)/modula2
