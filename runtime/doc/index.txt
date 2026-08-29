@@ -1279,6 +1279,7 @@ tag		command		action ~
 |:cnoreabbrev|	:cnorea[bbrev]	like ":noreabbrev" but for Command-line mode
 |:cnoremenu|	:cnoreme[nu]	like ":noremenu" but for Command-line mode
 |:copy|		:co[py]		copy lines
+|:copilot|	:copi[lot]	GitHub Copilot chat and completions
 |:colder|	:col[der]	go to older error list
 |:colorscheme|	:colo[rscheme]	load a specific color scheme
 |:command|	:com[mand]	create user-defined command

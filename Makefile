@@ -53,6 +53,26 @@ all install uninstall tools config configure reconfig proto depend lint types te
 		(cd runtime/syntax && $(MAKE) clean); \
 	fi
 
+# Build a vim-copilot Debian source package and its binary artifacts.  The
+# Debian rules file configures a fresh tree and fixes timestamps from the top
+# debian/changelog entry.  "deb-sbuild" verifies two clean-chroot builds.
+DEB_SUITE ?= unstable
+DEB_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+
+deb-src:
+	dpkg-source -b .
+
+deb:
+	dpkg-buildpackage -us -uc -b
+
+deb-sbuild:
+	debian/scripts/check-reproducible "$(DEB_SUITE)" "$(DEB_ARCH)"
+
+deb-clean:
+	dh_clean
+
+.PHONY: deb-src deb deb-sbuild deb-clean
+
 # Executable used for running the indent tests.
 VIM_FOR_INDENTTEST = ../../src/vim
 

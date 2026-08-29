@@ -2809,6 +2809,10 @@ struct channel_S {
 #endif
     callback_T	ch_callback;	// call when any msg is not handled
     callback_T	ch_close_cb;	// call when channel is closed
+#ifdef FEAT_COPILOT
+    // Handles every decoded message in C, bypassing ch_callback.
+    void	(*ch_c_callback)(channel_T *, typval_T *);
+#endif
     int		ch_drop_never;
     int		ch_keep_open;	// do not close on read error
     int		ch_nonblock;

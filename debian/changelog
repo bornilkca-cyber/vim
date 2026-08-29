@@ -1,0 +1,5 @@
+vim-copilot (9.2.994-1) unstable; urgency=medium
+
+  * Build the Debian package from a reproducible source package.
+
+ -- vim-copilot <root@reverb>  Sat, 22 Aug 2026 00:00:00 +0000

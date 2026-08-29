@@ -755,6 +755,22 @@ static struct vimoption options[] =
     {"conskey",	    "consk",P_BOOL|P_VI_DEF,
 			    (char_u *)NULL, PV_NONE, NULL, NULL,
 			    {(char_u *)FALSE, (char_u *)0L} SCTX_INIT},
+    {"copilot",    "cop",  P_BOOL|P_VI_DEF,
+#ifdef FEAT_COPILOT
+			    (char_u *)&p_copilot, PV_NONE, did_set_copilot, NULL,
+#else
+			    (char_u *)NULL, PV_NONE, NULL, NULL,
+#endif
+			    {(char_u *)FALSE, (char_u *)0L} SCTX_INIT},
+    {"copilotcommand", "cpcmd", P_STRING|P_EXPAND|P_VI_DEF|P_SECURE,
+#ifdef FEAT_COPILOT
+			    (char_u *)&p_cpcmd, PV_NONE, NULL, NULL,
+			    {(char_u *)"", (char_u *)0L}
+#else
+			    (char_u *)NULL, PV_NONE, NULL, NULL,
+			    {(char_u *)0L, (char_u *)0L}
+#endif
+			    SCTX_INIT},
     {"copyindent",  "ci",   P_BOOL|P_VI_DEF|P_VIM,
 			    (char_u *)&p_ci, PV_CI, NULL, NULL,
 			    {(char_u *)FALSE, (char_u *)0L} SCTX_INIT},

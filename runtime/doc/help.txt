@@ -151,6 +151,7 @@ Special issues ~
 |remote.txt|	using Vim as a server or client
 |term.txt|	using different terminals and mice
 |terminal.txt|	Terminal window support
+|copilot.txt|	GitHub Copilot support
 |popup.txt|	popup window support
 |vim9.txt|	using Vim9 script
 |vim9class.txt|	using Vim9 script classes

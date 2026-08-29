@@ -2864,6 +2864,13 @@ set_context_by_cmdname(
 	    xp->xp_pattern = arg;
 	    break;
 
+#ifdef FEAT_COPILOT
+	case CMD_copilot:
+	    xp->xp_context = EXPAND_COPILOT;
+	    xp->xp_pattern = arg;
+	    break;
+#endif
+
 	case CMD_retab:
 	    xp->xp_context = EXPAND_RETAB;
 	    xp->xp_pattern = arg;
@@ -3561,6 +3568,9 @@ ExpandOther(
 #endif
 #ifdef FEAT_SIGNS
 	{EXPAND_SIGN, get_sign_name, TRUE, TRUE},
+#endif
+#ifdef FEAT_COPILOT
+	{EXPAND_COPILOT, get_copilot_name, TRUE, TRUE},
 #endif
 #ifdef FEAT_PROFILE
 	{EXPAND_PROFILE, get_profile_name, TRUE, TRUE},

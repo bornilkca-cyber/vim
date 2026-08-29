@@ -1,0 +1,187 @@
+*copilot.txt*   For Vim version 9.2.  Last change: 2026 Aug 22
+
+
+		  VIM REFERENCE MANUAL    by the Vim Project
+
+
+GitHub Copilot support					*copilot* *Copilot*
+
+1. Introduction			|copilot-intro|
+2. Setting up			|copilot-setup|
+3. Chat				|copilot-chat|
+4. Working on code		|copilot-code|
+5. Inline completions		|copilot-completion|
+6. Agent tools			|copilot-tools|
+7. Options and commands		|copilot-commands|
+
+{only available when compiled with the |+copilot| feature}
+
+==============================================================================
+1. Introduction						*copilot-intro*
+
+Vim can talk to the GitHub Copilot language server directly, without a plugin.
+Vim starts the server as a job and speaks LSP JSON-RPC to it over a pipe; the
+framing is handled by the channel layer, see |channel-lsp-mode|.
+
+Everything is driven by one command, |:copilot|.
+
+Your code is sent to the GitHub Copilot service.  Do not use this on material
+you are not allowed to share.  Authentication tokens are stored by the
+language server, not by Vim.
+
+==============================================================================
+2. Setting up						*copilot-setup*
+
+Check that the feature is present: >
+	:echo has('copilot')
+<
+Sign in with the GitHub device flow: >
+	:copilot signin
+<
+Vim shows a URL and a one-time code.  Open the URL in a browser, enter the
+code, and Vim reports when the authorisation completes.  Press CTRL-C to give
+up.  To check the current state: >
+	:copilot status
+<
+To sign out again use |:copilot| signout.
+
+						*'copilot'* *'cop'* *'nocopilot'*
+'copilot' 'cop'		boolean	(default off)
+			global
+	When on, suggestions are asked for while you type, whenever Vim is
+	idle in Insert mode.  See |copilot-completion|.
+	The language server is started the first time a suggestion is needed
+	rather than when the option is set, so putting this in a |vimrc| does
+	not slow down startup.
+
+						*'copilotcommand'* *'cpcmd'*
+'copilotcommand' 'cpcmd'	string	(default "")
+			global
+	Path of the copilot-language-server executable.  When empty the
+	binary shipped with Vim is used, that is
+	"$VIMRUNTIME/copilot/copilot-language-server".
+	This option cannot be set from a |modeline| or in the |sandbox|.
+
+==============================================================================
+3. Chat							*copilot-chat*
+
+						*:copilot-chat*
+:copilot chat {message}
+			Send {message} and show the answer in the window
+			"[Copilot Chat]", opening it if needed.  The answer is
+			streamed in as it is generated.
+
+			Later messages continue the same conversation, so you
+			can refer back to what was said before.
+
+:copilot reset		Throw away the conversation and start a new one.
+
+The transcript uses the "copilotchat" filetype: headings and fenced code
+blocks are highlighted.  It is an ordinary scratch buffer, so you can search
+and yank in it as usual.
+
+==============================================================================
+4. Working on code					*copilot-code*
+
+These take a range, by default the whole buffer.  Use them from Visual mode to
+ask about a selection: >
+	:'<,'>copilot explain
+<
+:[range]copilot explain		Explain what the code does.
+:[range]copilot fix		Point out problems and suggest fixes.
+:[range]copilot tests		Write tests for the code.
+:[range]copilot doc		Write documentation for the code.
+:[range]copilot simplify	Suggest a simpler version.
+
+						*:copilot-apply*
+:copilot apply		Replace the range the last command above was used on
+			with the fenced code block under the cursor.  Run this
+			from the chat window, with the cursor inside or on the
+			block you want.
+
+			This changes the buffer and can be undone with |u|.
+
+==============================================================================
+5. Inline completions					*copilot-completion*
+
+						*:copilot-suggest*
+:copilot suggest	Ask for a completion at the cursor and show it as
+			grey virtual text after the cursor and below the
+			line.  Only the part that is not typed yet is shown.
+
+:copilot accept		Insert the suggestion that is being shown.  This can
+			be undone with |u|.
+
+:copilot dismiss	Remove the suggestion without inserting it.
+
+Suggestions are asked for automatically when 'copilot' is on, otherwise use
+|:copilot-suggest|.  An automatic suggestion is requested once Vim has been
+idle for a moment in Insert mode, and is dropped again when you leave Insert
+mode or move on.  Only one request is in flight at a time.
+
+Indentation follows 'expandtab' and 'shiftwidth'.
+
+==============================================================================
+6. Agent tools						*copilot-tools*
+
+						*:copilot-agent*
+:copilot agent {message}
+			Like |:copilot-chat|, but Copilot may ask Vim to run
+			tools on your machine to answer the question.
+
+Vim offers two tools: running a shell command, and reading a file.
+
+Before either one runs, Vim shows exactly what was asked for and waits for
+you: >
+	Copilot wants to run a tool.
+
+	Tool: vim_run_shell
+	Command: rm -rf build
+	This runs on your machine with your privileges.
+	Allow?
+	[N]o, (Y)es:
+<
+							*copilot-consent*
+Note that the answer defaults to "No", so pressing <CR> is always safe.
+Consent is asked for every single call.  There is deliberately no way to
+approve a tool once and for all, and no allow list.
+
+Vim asks even when the server does not request confirmation itself, because
+the server is not required to.  Read the command before allowing it: it is
+chosen by a language model, and it runs as you.
+
+Reading a file sends its contents to the Copilot service.
+
+==============================================================================
+7. Options and commands					*copilot-commands*
+
+							*:copilot*
+:copilot [status]	Report whether the server is running and who is
+			signed in.
+
+:copilot version	Show the language server path and version.
+:copilot start		Start the server.
+:copilot stop		Stop the server and forget the conversation.
+:copilot restart	Stop and start again.
+:copilot signin		Sign in, see |copilot-setup|.
+:copilot signout	Sign out.
+:copilot debug		Show how the current buffer looks to the server:
+			its URI, filetype, and the cursor position in the
+			UTF-16 units the protocol uses.  For diagnosis.
+
+Command line completion is available for all subcommands.
+
+Errors ~
+							*E1600* *E1601*
+E1600 is given when the language server cannot be started; check
+'copilotcommand'.  E1601 means it did not answer in time.
+							*E1604* *E1606*
+E1604 means the buffer has no file name, so it cannot be sent to the server.
+E1606 means |:copilot-apply| was used outside the chat window.
+							*E1607* *E1608*
+E1607 means there is nothing to replace, E1608 that the cursor is not in a
+fenced code block.
+							*E1609*
+E1609 means there is no suggestion to accept.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:

@@ -1,0 +1,32 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: vim-copilot
+Source: https://github.com/vim/vim
+
+Files: *
+Copyright: 1991-2026 Bram Moolenaar and the Vim contributors
+License: Vim
+ Vim is Charityware.  You can use and copy it as much as you like, but you are
+ encouraged to make a donation for needy children in Uganda.  Please see the
+ ":help uganda" section in the Vim documentation, or the file
+ /usr/share/vim-copilot/vim92/doc/uganda.txt.
+ .
+ The full license text is reproduced in
+ /usr/share/vim-copilot/vim92/doc/uganda.txt and in the LICENSE file of the
+ Vim source distribution.
+
+Files: runtime/copilot/copilot-language-server
+Copyright: 2023-2026 GitHub, Inc.
+License: proprietary-github-copilot
+ The GitHub Copilot Language Server is PROPRIETARY software distributed by
+ GitHub, Inc.  It is NOT free software and is NOT covered by the Vim license.
+ .
+ It is bundled here only as a convenience.  Its use is governed by the GitHub
+ Copilot product terms and requires an active GitHub Copilot subscription:
+ .
+   https://github.com/features/copilot
+   https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features
+ .
+ Redistribution of this binary may be restricted.  If you are producing a
+ package for public distribution, remove runtime/copilot/copilot-language-server
+ before building; vim-copilot then falls back to the 'copilotcommand' option so
+ that users can point at a server they obtained themselves.
